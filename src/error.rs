@@ -1,3 +1,9 @@
+#[cfg(feature = "defmt")]
+use defmt::{
+    Format as DeFormat,
+    Formatter as DeFormatter,
+    write as dewrite
+};
 use {
     alloc::alloc::handle_alloc_error,
     core::{
@@ -25,6 +31,22 @@ impl Display for SmallVecError {
 }
 
 impl Error for SmallVecError {}
+
+// `Layout` doesn't implement `defmt::Format`, so this can't be derived.
+#[cfg(feature = "defmt")]
+impl DeFormat for SmallVecError {
+    fn format(&self, fmt: DeFormatter) {
+        match self {
+            SmallVecError::CapacityOverflow => dewrite!(fmt, "CapacityOverflow"),
+            SmallVecError::AllocationError(layout) => dewrite!(
+                fmt,
+                "AllocationError(Layout {{ size: {=usize}, align: {=usize} }})",
+                layout.size(),
+                layout.align()
+            )
+        }
+    }
+}
 
 impl SmallVecError {
     #[cold]
