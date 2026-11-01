@@ -1947,7 +1947,7 @@ impl_rts_array!(
 );
 
 #[cfg(feature = "schemars")]
-#[cfg_attr(docsrs, doc(cfg(feature = "scheamrs")))]
+#[cfg_attr(docsrs, doc(cfg(feature = "schemars")))]
 impl<Item: JsonSchema, const INLINE: usize, Heap: Allocator> JsonSchema
     for SmallVec<Item, INLINE, Heap>
 {
