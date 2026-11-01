@@ -89,6 +89,10 @@ name = "bytes"
 required-features = ["bytes"]
 
 [[test]]
+name = "defmt"
+required-features = ["defmt"]
+
+[[test]]
 name = "encase"
 required-features = ["encase"]
 
