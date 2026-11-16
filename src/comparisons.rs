@@ -5,6 +5,12 @@ use equivalent::{
     Comparable,
     Equivalent
 };
+#[cfg(feature = "heapless")]
+use heapless::{
+    Deque,
+    LenType,
+    Vec as HeaplessVec
+};
 #[cfg(feature = "rkyv")]
 use rkyv::vec::ArchivedVec;
 #[cfg(feature = "tinyvec")]
@@ -267,6 +273,120 @@ implementation!([const LENGTH: usize] for TinyArrayVec<[Item; LENGTH]> =<> Small
 implementation!([const LENGTH: usize] for SmallVec<Item, INLINE, Heap> =<>+ TinyArrayVec<[Other; LENGTH]> where Other: Default);
 #[cfg(all(feature = "tinyvec", feature = "equivalent"))]
 implementation!([const LENGTH: usize] for TinyArrayVec<[Item; LENGTH]> =<>+ SmallVec<Other, INLINE, Heap> where Item: Default);
+
+#[cfg(feature = "heapless")]
+implementation!([const LENGTH: usize, LenT: LenType] for SmallVec<Item, INLINE, Heap> =? HeaplessVec<Other, LENGTH, LenT>);
+#[cfg(feature = "heapless")]
+implementation!([const LENGTH: usize, LenT: LenType] for HeaplessVec<Item, LENGTH, LenT> =? SmallVec<Other, INLINE, Heap>);
+#[cfg(all(feature = "heapless", feature = "equivalent"))]
+implementation!([const LENGTH: usize, LenT: LenType] for SmallVec<Item, INLINE, Heap> =?+ HeaplessVec<Other, LENGTH, LenT>);
+#[cfg(all(feature = "heapless", feature = "equivalent"))]
+implementation!([const LENGTH: usize, LenT: LenType] for HeaplessVec<Item, LENGTH, LenT> =?+ SmallVec<Other, INLINE, Heap>);
+#[cfg(feature = "heapless")]
+implementation!([const LENGTH: usize, LenT: LenType] for SmallVec<Item, INLINE, Heap> =<> HeaplessVec<Other, LENGTH, LenT>);
+#[cfg(feature = "heapless")]
+implementation!([const LENGTH: usize, LenT: LenType] for HeaplessVec<Item, LENGTH, LenT> =<> SmallVec<Other, INLINE, Heap>);
+#[cfg(all(feature = "heapless", feature = "equivalent"))]
+implementation!([const LENGTH: usize, LenT: LenType] for SmallVec<Item, INLINE, Heap> =<>+ HeaplessVec<Other, LENGTH, LenT>);
+#[cfg(all(feature = "heapless", feature = "equivalent"))]
+implementation!([const LENGTH: usize, LenT: LenType] for HeaplessVec<Item, LENGTH, LenT> =<>+ SmallVec<Other, INLINE, Heap>);
+
+#[cfg(feature = "heapless")]
+impl<Item: PartialEq<Other>, Other, const INLINE: usize, const LENGTH: usize, Heap: Allocator>
+    PartialEq<SmallVec<Other, INLINE, Heap>> for Deque<Item, LENGTH>
+{
+    #[inline]
+    fn eq(&self, other: &SmallVec<Other, INLINE, Heap>) -> bool {
+        let (first, second) = self.as_slices();
+        let Some((before, after)) = other.split_at_checked(first.len()) else {
+            return false;
+        };
+        first == before && second == after
+    }
+}
+#[cfg(feature = "heapless")]
+impl<Item: PartialEq<Other>, Other, const INLINE: usize, const LENGTH: usize, Heap: Allocator>
+    PartialEq<Deque<Other, LENGTH>> for SmallVec<Item, INLINE, Heap>
+{
+    #[inline]
+    fn eq(&self, other: &Deque<Other, LENGTH>) -> bool {
+        let (first, second) = other.as_slices();
+        let Some((before, after)) = self.split_at_checked(first.len()) else {
+            return false;
+        };
+        before == first && after == second
+    }
+}
+#[cfg(all(feature = "heapless", feature = "equivalent"))]
+impl<Item: Equivalent<Other>, Other, const INLINE: usize, const LENGTH: usize, Heap: Allocator>
+    Equivalent<SmallVec<Other, INLINE, Heap>> for Deque<Item, LENGTH>
+{
+    #[inline]
+    fn equivalent(&self, key: &SmallVec<Other, INLINE, Heap>) -> bool {
+        self.len() == key.len()
+            && self
+                .iter()
+                .zip(key.iter())
+                .all(|(item, key)| item.equivalent(key))
+    }
+}
+#[cfg(all(feature = "heapless", feature = "equivalent"))]
+impl<Item: Equivalent<Other>, Other, const INLINE: usize, const LENGTH: usize, Heap: Allocator>
+    Equivalent<Deque<Other, LENGTH>> for SmallVec<Item, INLINE, Heap>
+{
+    #[inline]
+    fn equivalent(&self, key: &Deque<Other, LENGTH>) -> bool {
+        self.len() == key.len()
+            && self
+                .iter()
+                .zip(key.iter())
+                .all(|(item, key)| item.equivalent(key))
+    }
+}
+#[cfg(feature = "heapless")]
+impl<Item: PartialOrd<Other>, Other, const INLINE: usize, const LENGTH: usize, Heap: Allocator>
+    PartialOrd<SmallVec<Other, INLINE, Heap>> for Deque<Item, LENGTH>
+{
+    #[inline]
+    fn partial_cmp(&self, other: &SmallVec<Other, INLINE, Heap>) -> Option<Ordering> {
+        self.iter().partial_cmp(other.iter())
+    }
+}
+#[cfg(feature = "heapless")]
+impl<Item: PartialOrd<Other>, Other, const INLINE: usize, const LENGTH: usize, Heap: Allocator>
+    PartialOrd<Deque<Other, LENGTH>> for SmallVec<Item, INLINE, Heap>
+{
+    #[inline]
+    fn partial_cmp(&self, other: &Deque<Other, LENGTH>) -> Option<Ordering> {
+        self.iter().partial_cmp(other.iter())
+    }
+}
+#[cfg(all(feature = "heapless", feature = "equivalent"))]
+impl<Item: Comparable<Other>, Other, const INLINE: usize, const LENGTH: usize, Heap: Allocator>
+    Comparable<SmallVec<Other, INLINE, Heap>> for Deque<Item, LENGTH>
+{
+    #[inline]
+    fn compare(&self, key: &SmallVec<Other, INLINE, Heap>) -> Ordering {
+        self.iter()
+            .zip(key.iter())
+            .map(|(item, key)| item.compare(key))
+            .find(|&ordering| ordering != Ordering::Equal)
+            .unwrap_or_else(|| self.len().cmp(&key.len()))
+    }
+}
+#[cfg(all(feature = "heapless", feature = "equivalent"))]
+impl<Item: Comparable<Other>, Other, const INLINE: usize, const LENGTH: usize, Heap: Allocator>
+    Comparable<Deque<Other, LENGTH>> for SmallVec<Item, INLINE, Heap>
+{
+    #[inline]
+    fn compare(&self, key: &Deque<Other, LENGTH>) -> Ordering {
+        self.iter()
+            .zip(key.iter())
+            .map(|(item, key)| item.compare(key))
+            .find(|&ordering| ordering != Ordering::Equal)
+            .unwrap_or_else(|| self.len().cmp(&key.len()))
+    }
+}
 
 implementation!([] for SmallVec<Item, INLINE, Heap> =? Cow<'_, [Other]> where Other: Clone);
 implementation!([] for Cow<'_, [Item]> =? SmallVec<Other, INLINE, Heap> where Item: Clone);

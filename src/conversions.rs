@@ -1,5 +1,11 @@
 #[cfg(feature = "arrayvec")]
 use arrayvec::ArrayVec;
+#[cfg(feature = "heapless")]
+use heapless::{
+    Deque,
+    LenType,
+    Vec as HeaplessVec
+};
 #[cfg(feature = "tinyvec")]
 use tinyvec::{
     Array,
@@ -139,6 +145,71 @@ impl<Item, const INLINE: usize, const LENGTH: usize, Heap: Allocator>
             array.set_len(length);
         }
         Ok(array)
+    }
+}
+
+#[cfg(feature = "heapless")]
+impl<Item, const INLINE: usize, const LENGTH: usize, LenT: LenType>
+    From<HeaplessVec<Item, LENGTH, LenT>> for SmallVec<Item, INLINE, Global>
+{
+    fn from(mut vec: HeaplessVec<Item, LENGTH, LenT>) -> Self {
+        let length = vec.len();
+        let mut smallvec = Self::with_capacity(length);
+        unsafe {
+            copy_nonoverlapping(vec.as_ptr(), smallvec.as_mut_ptr(), length);
+            vec.set_len(0);
+            smallvec.set_len(length);
+        }
+        smallvec
+    }
+}
+#[cfg(feature = "heapless")]
+impl<Item, const INLINE: usize, const LENGTH: usize, LenT: LenType, Heap: Allocator>
+    TryFrom<SmallVec<Item, INLINE, Heap>> for HeaplessVec<Item, LENGTH, LenT>
+{
+    type Error = SmallVec<Item, INLINE, Heap>;
+
+    fn try_from(
+        mut smallvec: SmallVec<Item, INLINE, Heap>
+    ) -> Result<HeaplessVec<Item, LENGTH, LenT>, SmallVec<Item, INLINE, Heap>> {
+        let length = smallvec.len();
+        if length > LENGTH {
+            return Err(smallvec);
+        }
+        let mut vec = HeaplessVec::new();
+        unsafe {
+            copy_nonoverlapping(smallvec.as_ptr(), vec.as_mut_ptr(), length);
+            smallvec.set_len(0);
+            vec.set_len(length);
+        }
+        Ok(vec)
+    }
+}
+#[cfg(feature = "heapless")]
+impl<Item, const INLINE: usize, const LENGTH: usize> From<Deque<Item, LENGTH>>
+    for SmallVec<Item, INLINE, Global>
+{
+    fn from(deque: Deque<Item, LENGTH>) -> Self {
+        let mut smallvec = Self::with_capacity(deque.len());
+        smallvec.extend(deque);
+        smallvec
+    }
+}
+#[cfg(feature = "heapless")]
+impl<Item, const INLINE: usize, const LENGTH: usize, Heap: Allocator>
+    TryFrom<SmallVec<Item, INLINE, Heap>> for Deque<Item, LENGTH>
+{
+    type Error = SmallVec<Item, INLINE, Heap>;
+
+    fn try_from(
+        smallvec: SmallVec<Item, INLINE, Heap>
+    ) -> Result<Deque<Item, LENGTH>, SmallVec<Item, INLINE, Heap>> {
+        if smallvec.len() > LENGTH {
+            return Err(smallvec);
+        }
+        let mut deque = Deque::new();
+        deque.extend(smallvec);
+        Ok(deque)
     }
 }
 

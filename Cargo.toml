@@ -54,6 +54,7 @@ bytes = { version = "1", optional = true, default-features = false }
 defmt = { version = "1", optional = true, default-features = false }
 encase = { version = "0.13", optional = true, default-features = false }
 equivalent = { version = "1", optional = true, default-features = false }
+heapless = { version = "0.9", optional = true, default-features = false }
 malloc_size_of = { version = "0.1", optional = true, default-features = false }
 proptest = { version = "1", optional = true, features = [
   "std",
@@ -103,6 +104,10 @@ required-features = ["encase"]
 [[test]]
 name = "equivalent"
 required-features = ["equivalent"]
+
+[[test]]
+name = "heapless"
+required-features = ["heapless"]
 
 [[test]]
 name = "maydangle"
