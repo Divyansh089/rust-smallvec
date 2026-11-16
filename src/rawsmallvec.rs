@@ -61,6 +61,11 @@ impl<Item, const INLINE: usize> RawSmallVec<Item, INLINE> {
 
     #[inline]
     pub const fn as_ptr_inline(&self) -> *const Item {
+        // With no inline capacity, use a dangling pointer like `Vec` does, so
+        // the address does not change when the `SmallVec` is moved.
+        if INLINE == 0 {
+            return NonNull::dangling().as_ptr();
+        }
         // SAFETY: it is safe because we aren't reading the value, just getting
         // a reference to it. reading it would be UB potentially, but
         // for that downstream unsafe is required
@@ -70,6 +75,10 @@ impl<Item, const INLINE: usize> RawSmallVec<Item, INLINE> {
 
     #[inline]
     pub const fn as_mut_ptr_inline(&mut self) -> *mut Item {
+        // See `as_ptr_inline`.
+        if INLINE == 0 {
+            return NonNull::dangling().as_ptr();
+        }
         // SAFETY: same as above
         #[allow(unused_unsafe, reason = "Unsafe in MSRV")]
         (unsafe { &raw mut self.inline }).cast()

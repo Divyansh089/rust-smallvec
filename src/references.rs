@@ -72,8 +72,9 @@ unsafe impl<Item, const INLINE: usize, Heap: Allocator> Pure for SmallVec<Item, 
 #[cfg(feature = "stable-deref")]
 #[cfg_attr(docsrs, doc(cfg(feature = "stable-deref")))]
 // SAFETY: with no inline capacity, elements always live in a heap allocation,
-// which does not move when the `SmallVec` is moved, just like `Vec`. Only an
-// empty `SmallVec` or one holding zero-sized items stays inline, and those
-// slices cover no bytes. A `SmallVec` with inline capacity cannot implement
-// this, since its inline elements move together with it.
+// which does not move when the `SmallVec` is moved, just like `Vec`. When it is
+// not spilled (empty, or holding zero-sized items) it points to a dangling
+// address, also like `Vec`, which does not change either. A `SmallVec` with
+// inline capacity cannot implement this, since its inline elements move
+// together with it.
 unsafe impl<Item> StableDeref for SmallVec<Item, 0, Global> {}
