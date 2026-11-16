@@ -80,7 +80,7 @@ impl<Item, const INLINE: usize> RawSmallVec<Item, INLINE> {
     /// # Safety
     ///
     /// `spilled` must be true if and only if `self.heap` is the active member.
-    #[inline]
+    #[inline(always)]
     pub const unsafe fn as_ptr(&self, spilled: bool) -> *const Item {
         if spilled {
             unsafe { self.heap.as_ptr().cast_const().cast() }
@@ -92,7 +92,7 @@ impl<Item, const INLINE: usize> RawSmallVec<Item, INLINE> {
     /// # Safety
     ///
     /// `spilled` must be true if and only if `self.heap` is the active member.
-    #[inline]
+    #[inline(always)]
     pub const unsafe fn as_mut_ptr(&mut self, spilled: bool) -> *mut Item {
         if spilled {
             unsafe { self.heap.as_ptr().cast() }
@@ -104,7 +104,7 @@ impl<Item, const INLINE: usize> RawSmallVec<Item, INLINE> {
     /// # Safety
     ///
     /// `spilled` must be true if and only if `self.heap` is the active member.
-    #[inline]
+    #[inline(always)]
     pub const unsafe fn capacity(&self, spilled: bool) -> usize {
         if spilled {
             unsafe { self.heap.len() }
