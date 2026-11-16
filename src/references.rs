@@ -1,5 +1,7 @@
 #[cfg(feature = "nightly")]
 use core::ops::DerefPure as Pure;
+#[cfg(feature = "stable-deref")]
+use stable_deref_trait::StableDeref;
 use {
     super::SmallVec,
     core::{
@@ -17,11 +19,6 @@ use {
             from_raw_parts_mut
         }
     }
-};
-#[cfg(feature = "stable-deref")]
-use {
-    alloc::alloc::Global,
-    stable_deref_trait::StableDeref
 };
 
 impl<Item, const INLINE: usize, Heap: Allocator> Borrow<[Item]> for SmallVec<Item, INLINE, Heap> {
@@ -71,10 +68,10 @@ unsafe impl<Item, const INLINE: usize, Heap: Allocator> Pure for SmallVec<Item, 
 
 #[cfg(feature = "stable-deref")]
 #[cfg_attr(docsrs, doc(cfg(feature = "stable-deref")))]
-// SAFETY: with no inline capacity, elements always live in a heap allocation,
-// which does not move when the `SmallVec` is moved, just like `Vec`. When it is
-// not spilled (empty, or holding zero-sized items) it points to a dangling
-// address, also like `Vec`, which does not change either. A `SmallVec` with
-// inline capacity cannot implement this, since its inline elements move
-// together with it.
-unsafe impl<Item> StableDeref for SmallVec<Item, 0, Global> {}
+// SAFETY: with no inline capacity, a spilled `SmallVec` points to its heap
+// allocation, which stays in place when the `SmallVec` (and its allocator) is
+// moved, as the `Allocator` contract requires. Otherwise it is empty or holds
+// zero-sized items, which `LocatedLength` treats as inline, and the pointer is
+// dangling like `Vec`'s, so it does not change either. With inline capacity
+// this would not hold, since the inline elements move together with it.
+unsafe impl<Item, Heap: Allocator> StableDeref for SmallVec<Item, 0, Heap> {}

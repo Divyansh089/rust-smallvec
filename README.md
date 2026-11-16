@@ -72,8 +72,8 @@ v.sort();
 - `serde`: implements serde's serialization and deserialization
 - `specialization` (nightly): enables specialization,
   improving performance on some cases
-- `stable-deref`: implements `StableDeref` for `SmallVec<Item, 0>`, whose
-  elements always live on the heap
+- `stable-deref`: implements `StableDeref` for `SmallVec<Item, 0, Heap>`, the
+  ones without inline capacity
 - `std`: implements the `std::io::Write` type for `SmallVec<u8, INLINE>`
 - `tinyvec`: implements conversions and comparisons between `SmallVec` and
   `tinyvec`'s `TinyVec` and `ArrayVec`
