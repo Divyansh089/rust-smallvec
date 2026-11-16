@@ -155,6 +155,10 @@ impl<Item, const INLINE: usize, const LENGTH: usize, LenT: LenType>
     fn from(mut vec: HeaplessVec<Item, LENGTH, LenT>) -> Self {
         let length = vec.len();
         let mut smallvec = Self::with_capacity(length);
+        // SAFETY: `smallvec` has room for `length` elements and is a separate
+        // buffer from `vec`. The first `length` elements of `vec` are
+        // initialized and are moved out, so `vec`'s length is set to `0` and
+        // they are only dropped once, by `smallvec`.
         unsafe {
             copy_nonoverlapping(vec.as_ptr(), smallvec.as_mut_ptr(), length);
             vec.set_len(0);
@@ -177,6 +181,10 @@ impl<Item, const INLINE: usize, const LENGTH: usize, LenT: LenType, Heap: Alloca
             return Err(smallvec);
         }
         let mut vec = HeaplessVec::new();
+        // SAFETY: `length <= LENGTH` was checked above, so `vec` has room for
+        // every element and `length` fits in `LenT`. The two buffers are
+        // separate. The elements are moved out of `smallvec`, so its length is
+        // set to `0` and they are only dropped once, by `vec`.
         unsafe {
             copy_nonoverlapping(smallvec.as_ptr(), vec.as_mut_ptr(), length);
             smallvec.set_len(0);
