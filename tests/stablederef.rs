@@ -22,3 +22,24 @@ fn address_survives_move() {
     assert_eq!(moved.as_ptr(), pointer);
     assert_eq!(**moved, [1, 2, 3]);
 }
+
+#[test]
+fn empty_address_survives_move() {
+    let vec = SmallVec::<u32, 0>::new();
+    let pointer = vec.as_ptr();
+    let moved = Box::new(vec);
+    assert_eq!(moved.as_ptr(), pointer);
+    assert!(moved.is_empty());
+}
+
+#[test]
+fn zero_sized_address_survives_move() {
+    let mut vec = SmallVec::<(), 0>::new();
+    vec.extend([(), (), ()]);
+    assert!(!vec.spilled());
+
+    let pointer = vec.as_ptr();
+    let moved = Box::new(vec);
+    assert_eq!(moved.as_ptr(), pointer);
+    assert_eq!(moved.len(), 3);
+}
