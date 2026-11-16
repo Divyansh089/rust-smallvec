@@ -12,9 +12,10 @@ use {
 
 #[cfg_attr(docsrs, doc(cfg(feature = "zerocopy")))]
 unsafe impl<Item, const INLINE: usize> TryFromBytes for SmallVec<Item, INLINE, Global> {
+    #[inline(always)]
     fn only_derive_is_allowed_to_implement_this_trait() {}
 
-    #[inline]
+    #[inline(always)]
     fn is_safe<Align>(_candidate: Maybe<'_, Self, Align>) -> bool
     where Align: Alignment {
         // Disallow arbitrary byte reads; only `FromZeros::new_zeroed()` is
@@ -25,11 +26,13 @@ unsafe impl<Item, const INLINE: usize> TryFromBytes for SmallVec<Item, INLINE, G
 
 #[cfg_attr(docsrs, doc(cfg(feature = "zerocopy")))]
 unsafe impl<Item, const INLINE: usize> FromZeros for SmallVec<Item, INLINE, Global> {
+    #[inline(always)]
     fn only_derive_is_allowed_to_implement_this_trait() {}
 }
 
 // Items may be stored inline, so `Item` must be `Immutable` too.
 #[cfg_attr(docsrs, doc(cfg(feature = "zerocopy")))]
 unsafe impl<Item: Immutable, const INLINE: usize> Immutable for SmallVec<Item, INLINE, Global> {
+    #[inline(always)]
     fn only_derive_is_allowed_to_implement_this_trait() {}
 }

@@ -36,14 +36,17 @@ impl<Iterable: Iterator, const INLINE: usize, Heap: Allocator> Iterator
 {
     type Item = Iterable::Item;
 
+    #[inline(always)]
     fn next(&mut self) -> Option<Self::Item> { self.drain.next() }
 
+    #[inline(always)]
     fn size_hint(&self) -> (usize, Option<usize>) { self.drain.size_hint() }
 }
 
 impl<Iterable: Iterator, const INLINE: usize, Heap: Allocator> DoubleEndedIterator
     for Splice<'_, Iterable, INLINE, Heap>
 {
+    #[inline(always)]
     fn next_back(&mut self) -> Option<Self::Item> { self.drain.next_back() }
 }
 
@@ -55,6 +58,7 @@ impl<Iterable: Iterator, const INLINE: usize, Heap: Allocator> ExactSizeIterator
 impl<Iterable: Iterator, const INLINE: usize, Heap: Allocator> Drop
     for Splice<'_, Iterable, INLINE, Heap>
 {
+    #[inline]
     fn drop(&mut self) {
         self.drain.by_ref().for_each(drop);
         self.drain.iter = Iter::default();
@@ -88,6 +92,7 @@ impl<Iterable: Iterator, const INLINE: usize, Heap: Allocator> Drop
 impl<'valid, Iterable: Iterator<Item: Debug> + 'valid, const INLINE: usize, Heap: Allocator> Debug
     for Splice<'valid, Iterable, INLINE, Heap>
 {
+    #[inline(always)]
     fn fmt(&self, f: &mut Formatter<'_>) -> Format {
         f.debug_tuple("Splice").field(&self.drain).finish()
     }
@@ -97,6 +102,7 @@ impl<'valid, Iterable: Iterator<Item: Debug> + 'valid, const INLINE: usize, Heap
 impl<'valid, Iterable: Iterator<Item: DeFormat> + 'valid, const INLINE: usize, Heap: Allocator>
     DeFormat for Splice<'valid, Iterable, INLINE, Heap>
 {
+    #[inline(always)]
     fn format(&self, fmt: DeFormatter<'_>) {
         dewrite!(fmt, "Splice({})", self.drain);
     }

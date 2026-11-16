@@ -34,7 +34,7 @@ macro_rules! implementation {
             const INLINE: usize,
             $($generics)*
         > PartialEq<$right> for $left $(where $typename: $bound)? {
-            #[inline]
+            #[inline(always)]
             fn eq(&self, other: &$right) -> bool {
                 *AsRef::<[Item]>::as_ref(self) == *AsRef::<[Other]>::as_ref(other)
             }
@@ -48,7 +48,7 @@ macro_rules! implementation {
             const INLINE: usize,
             $($generics)*
         > PartialOrd<$right> for $left $(where $typename: $bound)? {
-            #[inline]
+            #[inline(always)]
             fn partial_cmp(&self, other: &$right) -> Option<Ordering> {
                 AsRef::<[Item]>::as_ref(self).iter().partial_cmp(AsRef::<[Other]>::as_ref(other))
             }
@@ -94,7 +94,7 @@ implementation!([const LENGTH: usize, Assigner: Allocator] for SmallVec<Item, IN
 impl<Item: Eq, const INLINE: usize, Heap: Allocator> Eq for SmallVec<Item, INLINE, Heap> {}
 implementation!([const LENGTH: usize, Assigner: Allocator] for SmallVec<Item, INLINE, Heap> =<> SmallVec<Other, LENGTH, Assigner>);
 impl<Item: Ord, const INLINE: usize, Heap: Allocator> Ord for SmallVec<Item, INLINE, Heap> {
-    #[inline]
+    #[inline(always)]
     fn cmp(&self, other: &SmallVec<Item, INLINE, Heap>) -> Ordering {
         self.as_ref().cmp(other.as_ref())
     }
@@ -352,7 +352,7 @@ impl<Item: Equivalent<Other>, Other, const INLINE: usize, Heap: Allocator>
 impl<Item: PartialOrd<Other>, Other, const INLINE: usize, Heap: Allocator>
     PartialOrd<SmallVec<Other, INLINE, Heap>> for VecDeque<Item>
 {
-    #[inline]
+    #[inline(always)]
     fn partial_cmp(&self, other: &SmallVec<Other, INLINE, Heap>) -> Option<Ordering> {
         self.iter().partial_cmp(other.iter())
     }
@@ -360,7 +360,7 @@ impl<Item: PartialOrd<Other>, Other, const INLINE: usize, Heap: Allocator>
 impl<Item: PartialOrd<Other>, Other, const INLINE: usize, Heap: Allocator>
     PartialOrd<VecDeque<Other>> for SmallVec<Item, INLINE, Heap>
 {
-    #[inline]
+    #[inline(always)]
     fn partial_cmp(&self, other: &VecDeque<Other>) -> Option<Ordering> {
         self.iter().partial_cmp(other.iter())
     }

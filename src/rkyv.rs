@@ -24,6 +24,7 @@ impl<Item: Archive, const INLINE: usize, Heap: Allocator> Archive for SmallVec<I
     type Archived = ArchivedVec<Archived<Item>>;
     type Resolver = VecResolver;
 
+    #[inline(always)]
     fn resolve(&self, resolver: Self::Resolver, out: Place<Self::Archived>) {
         ArchivedVec::resolve_from_slice(self, resolver, out);
     }
@@ -35,6 +36,7 @@ where
     Item: RkyvSerialize<S>,
     S: Fallible + RkyvAllocator + Writer + ?Sized
 {
+    #[inline(always)]
     fn serialize(&self, serializer: &mut S) -> Result<Self::Resolver, S::Error> {
         ArchivedVec::serialize_from_slice(self, serializer)
     }
@@ -47,6 +49,7 @@ where
     Archived<Item>: RkyvDeserialize<Item, D>,
     D: Fallible + ?Sized
 {
+    #[inline]
     fn deserialize(
         &self,
         deserializer: &mut D

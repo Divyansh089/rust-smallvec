@@ -62,7 +62,7 @@ impl<'valid, Item: 'valid, const INLINE: usize, Heap: Allocator> Iterator
             .map(|reference| unsafe { (&raw const *reference).read() })
     }
 
-    #[inline]
+    #[inline(always)]
     fn size_hint(&self) -> (usize, Option<usize>) { self.iter.size_hint() }
 }
 
@@ -81,7 +81,7 @@ impl<'valid, Item: 'valid, const INLINE: usize, Heap: Allocator> DoubleEndedIter
 impl<Item, const INLINE: usize, Heap: Allocator> ExactSizeIterator
     for Drain<'_, Item, INLINE, Heap>
 {
-    #[inline]
+    #[inline(always)]
     fn len(&self) -> usize { self.iter.len() }
 }
 
@@ -91,6 +91,7 @@ struct DropGuard<'guard, 'valid, Item, const INLINE: usize, Heap: Allocator>(
     &'guard mut Drain<'valid, Item, INLINE, Heap>
 );
 impl<Item, const INLINE: usize, Heap: Allocator> Drop for DropGuard<'_, '_, Item, INLINE, Heap> {
+    #[inline]
     fn drop(&mut self) {
         if self.0.tail_len > 0 {
             unsafe {
@@ -113,6 +114,7 @@ impl<Item, const INLINE: usize, Heap: Allocator> Drop for DropGuard<'_, '_, Item
 impl<'valid, Item: 'valid, const INLINE: usize, Heap: Allocator> Drop
     for Drain<'valid, Item, INLINE, Heap>
 {
+    #[inline]
     fn drop(&mut self) {
         let iter = take(&mut self.iter);
         let drop_len = iter.len();
@@ -169,7 +171,7 @@ impl<'valid, Item: 'valid, const INLINE: usize, Heap: Allocator> Drop
 }
 
 impl<Item, const INLINE: usize, Heap: Allocator> AsRef<[Item]> for Drain<'_, Item, INLINE, Heap> {
-    #[inline]
+    #[inline(always)]
     fn as_ref(&self) -> &[Item] { self.iter.as_slice() }
 }
 
@@ -179,6 +181,7 @@ impl<Item, const INLINE: usize, Heap: Allocator> Drain<'_, Item, INLINE, Heap> {
         note = "use `<Drain<'_, Item, INLINE, Heap> as AsRef<[Item]>>::as_ref` instead"
     )]
     #[must_use]
+    #[inline(always)]
     pub fn as_slice(&self) -> &[Item] { self.as_ref() }
 
     /// The range from `self.vec.length` to `self.tail_start` contains elements
@@ -186,6 +189,7 @@ impl<Item, const INLINE: usize, Heap: Allocator> Drain<'_, Item, INLINE, Heap> {
     /// Fill that range as much as possible with new elements from the
     /// `replace_with` iterator. Returns `true` if we filled the entire
     /// range. (`replace_with.next()` didn’t return `None`.)
+    #[inline]
     pub(crate) unsafe fn fill<I: Iterator<Item = Item>>(&mut self, replace_with: &mut I) -> bool {
         let vec = unsafe { self.vec.as_mut() };
         let range_end = self.tail_start;
@@ -206,6 +210,7 @@ impl<Item, const INLINE: usize, Heap: Allocator> Drain<'_, Item, INLINE, Heap> {
 
     /// Makes room for inserting more elements before the tail.
     #[track_caller]
+    #[inline]
     pub(crate) unsafe fn move_tail(&mut self, additional: usize) {
         let vec = unsafe { self.vec.as_mut() };
         let length = self.tail_start + self.tail_len;
@@ -232,6 +237,7 @@ impl<Item, const INLINE: usize, Heap: Allocator> Drain<'_, Item, INLINE, Heap> {
 }
 
 impl<Item: Debug, const INLINE: usize, Heap: Allocator> Debug for Drain<'_, Item, INLINE, Heap> {
+    #[inline(always)]
     fn fmt(&self, f: &mut Formatter<'_>) -> Format {
         f.debug_tuple("Drain").field(&self.iter.as_slice()).finish()
     }
@@ -241,6 +247,7 @@ impl<Item: Debug, const INLINE: usize, Heap: Allocator> Debug for Drain<'_, Item
 impl<Item: DeFormat, const INLINE: usize, Heap: Allocator> DeFormat
     for Drain<'_, Item, INLINE, Heap>
 {
+    #[inline(always)]
     fn format(&self, fmt: DeFormatter<'_>) {
         dewrite!(fmt, "Drain({=[?]})", self.iter.as_slice());
     }

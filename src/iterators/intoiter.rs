@@ -91,14 +91,14 @@ impl<Item, const INLINE: usize, Heap: Allocator> IntoIter<Item, INLINE, Heap> {
         since = "2.0.0-beta.3",
         note = "use `<IntoIter<Item, INLINE, Heap> as AsRef<[Item]>>::as_ref` instead"
     )]
-    #[inline]
+    #[inline(always)]
     pub fn as_slice(&self) -> &[Item] { self.as_ref() }
 
     #[deprecated(
         since = "2.0.0-beta.3",
         note = "use `<IntoIter<Item, INLINE, Heap> as AsMut<[Item]>>::as_mut` instead"
     )]
-    #[inline]
+    #[inline(always)]
     pub fn as_mut_slice(&mut self) -> &mut [Item] { self.as_mut() }
 }
 
@@ -155,6 +155,7 @@ impl<Item, const INLINE: usize, Heap: Allocator> ExactSizeIterator
 impl<Item, const INLINE: usize, Heap: Allocator> FusedIterator for IntoIter<Item, INLINE, Heap> {}
 
 impl<Item, const INLINE: usize, Heap: Allocator> Drop for IntoIter<Item, INLINE, Heap> {
+    #[inline]
     fn drop(&mut self) {
         // SAFETY: see above
         unsafe {
@@ -198,6 +199,7 @@ impl<Item, const INLINE: usize, Heap: Allocator> IntoIterator for SmallVec<Item,
     type IntoIter = IntoIter<Item, INLINE, Heap>;
     type Item = Item;
 
+    #[inline]
     fn into_iter(self) -> Self::IntoIter {
         let (end, raw, allocator) = self.into();
         IntoIter {
@@ -210,6 +212,7 @@ impl<Item, const INLINE: usize, Heap: Allocator> IntoIterator for SmallVec<Item,
 }
 
 impl<Item: Debug, const INLINE: usize, Heap: Allocator> Debug for IntoIter<Item, INLINE, Heap> {
+    #[inline(always)]
     fn fmt(&self, f: &mut Formatter<'_>) -> Format {
         f.debug_tuple("IntoIter").field(&self.as_ref()).finish()
     }
@@ -219,6 +222,7 @@ impl<Item: Debug, const INLINE: usize, Heap: Allocator> Debug for IntoIter<Item,
 impl<Item: DeFormat, const INLINE: usize, Heap: Allocator> DeFormat
     for IntoIter<Item, INLINE, Heap>
 {
+    #[inline(always)]
     fn format(&self, fmt: DeFormatter<'_>) {
         dewrite!(fmt, "IntoIter({=[?]})", self.as_ref());
     }

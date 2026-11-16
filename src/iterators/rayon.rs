@@ -27,12 +27,14 @@ struct SliceDrain<'valid, Item>(IterMut<'valid, Item>);
 impl<Item> Iterator for SliceDrain<'_, Item> {
     type Item = Item;
 
+    #[inline(always)]
     fn next(&mut self) -> Option<Item> {
         self.0.next().map(|val| unsafe { (&raw const *val).read() })
     }
 }
 
 impl<Item> DoubleEndedIterator for SliceDrain<'_, Item> {
+    #[inline]
     fn next_back(&mut self) -> Option<Item> {
         self.0
             .next_back()
@@ -41,10 +43,12 @@ impl<Item> DoubleEndedIterator for SliceDrain<'_, Item> {
 }
 
 impl<Item> ExactSizeIterator for SliceDrain<'_, Item> {
+    #[inline(always)]
     fn len(&self) -> usize { self.0.len() }
 }
 
 impl<Item> Drop for SliceDrain<'_, Item> {
+    #[inline(always)]
     fn drop(&mut self) { unsafe { drop_in_place(take(&mut self.0).into_slice()) }; }
 }
 
@@ -54,8 +58,10 @@ impl<'valid, Item: Send> Producer for DrainProducer<'valid, Item> {
     type IntoIter = SliceDrain<'valid, Item>;
     type Item = Item;
 
+    #[inline(always)]
     fn into_iter(mut self) -> SliceDrain<'valid, Item> { SliceDrain(take(&mut self.0).iter_mut()) }
 
+    #[inline]
     fn split_at(mut self, index: usize) -> (Self, Self) {
         let (left, right) = take(&mut self.0).split_at_mut(index);
 
@@ -64,6 +70,7 @@ impl<'valid, Item: Send> Producer for DrainProducer<'valid, Item> {
 }
 
 impl<Item> Drop for DrainProducer<'_, Item> {
+    #[inline(always)]
     fn drop(&mut self) { unsafe { drop_in_place(self.0) }; }
 }
 
@@ -72,6 +79,7 @@ impl<Item: Send, const INLINE: usize, Heap: Allocator + Send> ParallelIterator
 {
     type Item = Item;
 
+    #[inline]
     fn drive_unindexed<C: UnindexedConsumer<Item>>(mut self, consumer: C) -> C::Result {
         let length = self.len();
 

@@ -30,6 +30,7 @@ use {
 impl<Item: BorshSerialize, const INLINE: usize, Heap: Allocator> BorshSerialize
     for SmallVec<Item, INLINE, Heap>
 {
+    #[inline]
     fn serialize<Writer: Write>(&self, writer: &mut Writer) -> Serial<()> {
         (self.len() as u64).serialize(writer)?;
         for element in self {
@@ -43,6 +44,7 @@ impl<Item: BorshSerialize, const INLINE: usize, Heap: Allocator> BorshSerialize
 impl<Item: BorshDeserialize, const INLINE: usize> BorshDeserialize
     for SmallVec<Item, INLINE, Global>
 {
+    #[inline]
     fn deserialize_reader<R: Read>(reader: &mut R) -> Serial<Self> {
         let length = u64::deserialize_reader(reader)?;
         repeat_with(|| Item::deserialize_reader(reader))
@@ -57,8 +59,10 @@ impl<Item: BorshDeserialize, const INLINE: usize> BorshDeserialize
 impl<Item: BorshSchema, const INLINE: usize, Heap: Allocator> BorshSchema
     for SmallVec<Item, INLINE, Heap>
 {
+    #[inline(always)]
     fn declaration() -> Declaration { format!("Vec<{}>", Item::declaration()) }
 
+    #[inline]
     fn add_definitions_recursively(definitions: &mut Map<Declaration, Definition>) {
         let declaration = Self::declaration();
         if definitions.contains_key(&declaration) {

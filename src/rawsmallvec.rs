@@ -39,6 +39,7 @@ pub union RawSmallVec<Item, const INLINE: usize> {
 // The active member is tracked by `LocatedLength`, not by the union itself, so
 // neither member can be read safely here.
 impl<Item, const INLINE: usize> Debug for RawSmallVec<Item, INLINE> {
+    #[inline(always)]
     fn fmt(&self, f: &mut Formatter<'_>) -> Format {
         f.debug_struct("RawSmallVec").finish_non_exhaustive()
     }
@@ -46,6 +47,7 @@ impl<Item, const INLINE: usize> Debug for RawSmallVec<Item, INLINE> {
 
 #[cfg(feature = "defmt")]
 impl<Item, const INLINE: usize> DeFormat for RawSmallVec<Item, INLINE> {
+    #[inline(always)]
     fn format(&self, fmt: DeFormatter<'_>) {
         dewrite!(fmt, "RawSmallVec {{ .. }}");
     }
@@ -78,7 +80,7 @@ impl<Item, const INLINE: usize> RawSmallVec<Item, INLINE> {
     /// # Safety
     ///
     /// `spilled` must be true if and only if `self.heap` is the active member.
-    #[inline(always)]
+    #[inline]
     pub const unsafe fn as_ptr(&self, spilled: bool) -> *const Item {
         if spilled {
             unsafe { self.heap.as_ptr().cast_const().cast() }
@@ -90,7 +92,7 @@ impl<Item, const INLINE: usize> RawSmallVec<Item, INLINE> {
     /// # Safety
     ///
     /// `spilled` must be true if and only if `self.heap` is the active member.
-    #[inline(always)]
+    #[inline]
     pub const unsafe fn as_mut_ptr(&mut self, spilled: bool) -> *mut Item {
         if spilled {
             unsafe { self.heap.as_ptr().cast() }
@@ -102,7 +104,7 @@ impl<Item, const INLINE: usize> RawSmallVec<Item, INLINE> {
     /// # Safety
     ///
     /// `spilled` must be true if and only if `self.heap` is the active member.
-    #[inline(always)]
+    #[inline]
     pub const unsafe fn capacity(&self, spilled: bool) -> usize {
         if spilled {
             unsafe { self.heap.len() }
@@ -119,6 +121,7 @@ impl<Item, const INLINE: usize> RawSmallVec<Item, INLINE> {
     /// Item must not be a ZST.
     ///
     /// the allocator must be the same one the data was allocated with
+    #[inline]
     pub unsafe fn try_grow_raw<Heap: Allocator>(
         &mut self,
         length: LocatedLength<Item>,
@@ -183,5 +186,6 @@ impl<Item, const INLINE: usize> RawSmallVec<Item, INLINE> {
 }
 
 impl<Item, const INLINE: usize> Default for RawSmallVec<Item, INLINE> {
+    #[inline(always)]
     fn default() -> Self { Self::new() }
 }

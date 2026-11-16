@@ -46,6 +46,7 @@ where
     F: FnMut(&mut Item) -> bool,
     Item: Debug
 {
+    #[inline]
     fn fmt(&self, f: &mut Formatter<'_>) -> Format {
         f.debug_tuple("ExtractIf")
             .field(&self.vec.as_ref())
@@ -60,6 +61,7 @@ where
     F: FnMut(&mut Item) -> bool,
     Item: DeFormat
 {
+    #[inline(always)]
     fn format(&self, fmt: DeFormatter<'_>) {
         dewrite!(fmt, "ExtractIf({=[?]})", self.vec.as_ref());
     }
@@ -71,6 +73,7 @@ where F: FnMut(&mut Item) -> bool
 {
     type Item = Item;
 
+    #[inline]
     fn next(&mut self) -> Option<Item> {
         unsafe {
             while self.idx < self.end {
@@ -95,12 +98,14 @@ where F: FnMut(&mut Item) -> bool
         }
     }
 
+    #[inline(always)]
     fn size_hint(&self) -> (usize, Option<usize>) { (0, Some(self.end - self.idx)) }
 }
 
 impl<Item, F, const INLINE: usize, Heap: Allocator> Drop for ExtractIf<'_, Item, INLINE, F, Heap>
 where F: FnMut(&mut Item) -> bool
 {
+    #[inline]
     fn drop(&mut self) {
         unsafe {
             if self.idx < self.old_len && self.del > 0 {

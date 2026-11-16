@@ -28,6 +28,7 @@ use {
 impl<Item: Serialize, const INLINE: usize, Heap: Allocator> Serialize
     for SmallVec<Item, INLINE, Heap>
 {
+    #[inline]
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut state = serializer.serialize_seq(Some(self.len()))?;
         for item in self {
@@ -40,6 +41,7 @@ impl<Item: Serialize, const INLINE: usize, Heap: Allocator> Serialize
 impl<'de, Item: Deserialize<'de>, const INLINE: usize> Deserialize<'de>
     for SmallVec<Item, INLINE, Global>
 {
+    #[inline]
     fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
         deserializer.deserialize_seq(SmallVecVisitor {
             phantom: PhantomData
@@ -56,10 +58,12 @@ impl<'de, Item: Deserialize<'de>, const INLINE: usize> Visitor<'de>
 {
     type Value = SmallVec<Item, INLINE, Global>;
 
+    #[inline(always)]
     fn expecting(&self, formatter: &mut Formatter<'_>) -> Format {
         formatter.write_str("a sequence")
     }
 
+    #[inline]
     fn visit_seq<B: SeqAccess<'de>>(self, mut seq: B) -> Result<Self::Value, B::Error> {
         let length = seq.size_hint().unwrap_or(0);
         let mut values = SmallVec::new();

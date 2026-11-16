@@ -28,13 +28,14 @@ pub struct LocatedLength<Item>(usize, PhantomData<Item>);
 // We don't use `#[derive(Clone, Copy)]` instead because `Item` doesn't need to
 // be `Copy` or `Clone`.
 impl<Item> Clone for LocatedLength<Item> {
-    #[inline]
+    #[inline(always)]
     fn clone(&self) -> Self { *self }
 }
 
 impl<Item> Copy for LocatedLength<Item> {}
 
 impl<Item> Debug for LocatedLength<Item> {
+    #[inline]
     fn fmt(&self, f: &mut Formatter<'_>) -> Format {
         let (length, spilled) = self.parts();
         f.debug_struct("LocatedLength")
@@ -46,6 +47,7 @@ impl<Item> Debug for LocatedLength<Item> {
 
 #[cfg(feature = "defmt")]
 impl<Item> DeFormat for LocatedLength<Item> {
+    #[inline]
     fn format(&self, fmt: DeFormatter<'_>) {
         let (length, spilled) = self.parts();
         dewrite!(
@@ -66,7 +68,7 @@ impl<Item> LocatedLength<Item> {
 
     /// For non-ZST `Item`, `length` must not exceed `isize::MAX`.
     /// For ZST `Item`, `spilled` must be `false`.
-    #[inline(always)]
+    #[inline]
     pub const fn new(length: usize, spilled: bool) -> Self {
         Self(
             (length << Self::SHIFT) | ((spilled as usize) & Self::TAG),
@@ -84,7 +86,7 @@ impl<Item> LocatedLength<Item> {
     #[inline(always)]
     pub const fn parts(self) -> (usize, bool) { (self.0 >> Self::SHIFT, (self.0 & Self::TAG) != 0) }
 
-    #[inline(always)]
+    #[inline]
     pub const fn set_location<const ON: bool>(&mut self) {
         if Self::TAG != 0 {
             self.0 = (self.0 & !Self::TAG) | ON as usize;
@@ -95,7 +97,7 @@ impl<Item> LocatedLength<Item> {
     ///
     /// On 64-bit targets, `self.len() + n` must not overflow and must not
     /// exceed `isize::MAX` for non-ZST `Item`, or `usize::MAX` for ZST `Item`.
-    #[inline(always)]
+    #[inline]
     pub const unsafe fn add(&mut self, n: usize) {
         #[cfg(not(target_pointer_width = "64"))]
         {

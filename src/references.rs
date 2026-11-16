@@ -20,14 +20,14 @@ use {
 };
 
 impl<Item, const INLINE: usize, Heap: Allocator> Borrow<[Item]> for SmallVec<Item, INLINE, Heap> {
-    #[inline]
+    #[inline(always)]
     fn borrow(&self) -> &[Item] { self.as_ref() }
 }
 
 impl<Item, const INLINE: usize, Heap: Allocator> BorrowMut<[Item]>
     for SmallVec<Item, INLINE, Heap>
 {
-    #[inline]
+    #[inline(always)]
     fn borrow_mut(&mut self) -> &mut [Item] { self.as_mut() }
 }
 
@@ -52,12 +52,12 @@ impl<Item, const INLINE: usize, Heap: Allocator> AsMut<[Item]> for SmallVec<Item
 impl<Item, const INLINE: usize, Heap: Allocator> Deref for SmallVec<Item, INLINE, Heap> {
     type Target = [Item];
 
-    #[inline]
+    #[inline(always)]
     fn deref(&self) -> &Self::Target { self.as_ref() }
 }
 
 impl<Item, const INLINE: usize, Heap: Allocator> DerefMut for SmallVec<Item, INLINE, Heap> {
-    #[inline]
+    #[inline(always)]
     fn deref_mut(&mut self) -> &mut Self::Target { self.as_mut() }
 }
 

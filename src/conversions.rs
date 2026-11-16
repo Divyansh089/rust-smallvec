@@ -42,27 +42,28 @@ impl<Item: Clone, const INLINE: usize> From<&[Item]> for SmallVec<Item, INLINE, 
 }
 
 impl<Item: Clone, const INLINE: usize> From<&mut [Item]> for SmallVec<Item, INLINE, Global> {
-    #[inline]
+    #[inline(always)]
     fn from(slice: &mut [Item]) -> Self { From::<&[Item]>::from(slice) }
 }
 
 impl<Item: Clone, const INLINE: usize, const LENGTH: usize> From<&[Item; LENGTH]>
     for SmallVec<Item, INLINE, Global>
 {
-    #[inline]
+    #[inline(always)]
     fn from(slice: &[Item; LENGTH]) -> Self { From::<&[Item]>::from(slice) }
 }
 
 impl<Item: Clone, const INLINE: usize, const LENGTH: usize> From<&mut [Item; LENGTH]>
     for SmallVec<Item, INLINE, Global>
 {
-    #[inline]
+    #[inline(always)]
     fn from(slice: &mut [Item; LENGTH]) -> Self { From::<&[Item]>::from(slice) }
 }
 
 impl<Item, const INLINE: usize, const LENGTH: usize> From<[Item; LENGTH]>
     for SmallVec<Item, INLINE, Global>
 {
+    #[inline]
     fn from(array: [Item; LENGTH]) -> Self {
         if const { LENGTH <= INLINE } {
             let mut smallvec = Self::new();
@@ -108,6 +109,7 @@ impl<Item, const INLINE: usize, const LENGTH: usize, Heap: Allocator>
 impl<Item, const INLINE: usize, const LENGTH: usize> From<ArrayVec<Item, LENGTH>>
     for SmallVec<Item, INLINE, Global>
 {
+    #[inline]
     fn from(mut array: ArrayVec<Item, LENGTH>) -> Self {
         let length = array.len();
         let mut smallvec = Self::with_capacity(length);
@@ -125,6 +127,7 @@ impl<Item, const INLINE: usize, const LENGTH: usize, Heap: Allocator>
 {
     type Error = SmallVec<Item, INLINE, Heap>;
 
+    #[inline]
     fn try_from(
         mut smallvec: SmallVec<Item, INLINE, Heap>
     ) -> Result<ArrayVec<Item, LENGTH>, SmallVec<Item, INLINE, Heap>> {
@@ -144,6 +147,7 @@ impl<Item, const INLINE: usize, const LENGTH: usize, Heap: Allocator>
 
 #[cfg(feature = "tinyvec")]
 impl<A: Array, const INLINE: usize> From<TinyVec<A>> for SmallVec<A::Item, INLINE, Global> {
+    #[inline]
     fn from(tiny: TinyVec<A>) -> Self {
         if tiny.is_heap() && tiny.len() > Self::inline_size() {
             // The source already owns a heap buffer big enough for a spilled
@@ -163,6 +167,7 @@ impl<A: Array, const INLINE: usize, Heap: Allocator> TryFrom<SmallVec<A::Item, I
 {
     type Error = SmallVec<A::Item, INLINE, Heap>;
 
+    #[inline]
     fn try_from(
         smallvec: SmallVec<A::Item, INLINE, Heap>
     ) -> Result<TinyVec<A>, SmallVec<A::Item, INLINE, Heap>> {
@@ -176,6 +181,7 @@ impl<A: Array, const INLINE: usize, Heap: Allocator> TryFrom<SmallVec<A::Item, I
 }
 #[cfg(feature = "tinyvec")]
 impl<A: Array, const INLINE: usize> From<TinyArrayVec<A>> for SmallVec<A::Item, INLINE, Global> {
+    #[inline]
     fn from(array: TinyArrayVec<A>) -> Self {
         let mut smallvec = Self::with_capacity(array.len());
         smallvec.extend(array);
@@ -188,6 +194,7 @@ impl<A: Array, const INLINE: usize, Heap: Allocator> TryFrom<SmallVec<A::Item, I
 {
     type Error = SmallVec<A::Item, INLINE, Heap>;
 
+    #[inline]
     fn try_from(
         smallvec: SmallVec<A::Item, INLINE, Heap>
     ) -> Result<TinyArrayVec<A>, SmallVec<A::Item, INLINE, Heap>> {
@@ -201,6 +208,7 @@ impl<A: Array, const INLINE: usize, Heap: Allocator> TryFrom<SmallVec<A::Item, I
 }
 
 impl<Item, const INLINE: usize> From<Vec<Item>> for SmallVec<Item, INLINE> {
+    #[inline]
     fn from(array: Vec<Item>) -> Self {
         if array.capacity() == 0 {
             return Self::new();
@@ -252,6 +260,7 @@ impl<Item, const INLINE: usize> From<Vec<Item>> for SmallVec<Item, INLINE> {
 impl<Item, const INLINE: usize, Heap: Allocator> From<SmallVec<Item, INLINE, Heap>>
     for Vec<Item, Heap>
 {
+    #[inline]
     fn from(this: SmallVec<Item, INLINE, Heap>) -> Self {
         let (length, spilled) = this.length.parts();
         let this = ManuallyDrop::new(this);
@@ -293,12 +302,14 @@ impl<Item, const INLINE: usize, Heap: Allocator> From<SmallVec<Item, INLINE, Hea
 impl<Item, const INLINE: usize, Heap: Allocator> From<SmallVec<Item, INLINE, Heap>>
     for Box<[Item], Heap>
 {
+    #[inline(always)]
     fn from(this: SmallVec<Item, INLINE, Heap>) -> Self {
         Vec::<Item, Heap>::from(this).into_boxed_slice()
     }
 }
 
 impl<T, const N: usize> From<Box<[T]>> for SmallVec<T, N> {
+    #[inline(always)]
     fn from(boxed: Box<[T]>) -> Self { boxed.into_vec().into() }
 }
 
@@ -348,6 +359,6 @@ impl<Item: Clone, const INLINE: usize> From<Cow<'_, [Item]>> for SmallVec<Item, 
     }
 }
 impl<Item: Clone, const INLINE: usize> From<SmallVec<Item, INLINE, Global>> for Cow<'_, [Item]> {
-    #[inline]
+    #[inline(always)]
     fn from(value: SmallVec<Item, INLINE, Global>) -> Self { Cow::Owned(value.into()) }
 }

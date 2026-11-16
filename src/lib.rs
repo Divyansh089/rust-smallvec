@@ -164,19 +164,20 @@ unsafe impl<Item: Sync, const INLINE: usize, Heap: Allocator + Sync> Sync
 }
 
 impl<Item, const INLINE: usize> Default for SmallVec<Item, INLINE, Global> {
-    #[inline]
+    #[inline(always)]
     fn default() -> Self { Self::new() }
 }
 
 impl<Item, const INLINE: usize> SmallVec<Item, INLINE, Global> {
-    #[inline]
+    #[inline(always)]
     pub const fn new() -> SmallVec<Item, INLINE, Global> { Self::new_in(Global) }
 
+    #[inline(always)]
     pub fn try_with_capacity(capacity: usize) -> Result<Self, SmallVecError> {
         Self::try_with_capacity_in(capacity, Global)
     }
 
-    #[inline]
+    #[inline(always)]
     #[track_caller]
     pub fn with_capacity(capacity: usize) -> Self { Self::with_capacity_in(capacity, Global) }
 
@@ -279,11 +280,11 @@ impl<Item, const INLINE: usize> SmallVec<Item, INLINE, Global> {
         }
     }
 
-    #[inline]
+    #[inline(always)]
     #[deprecated(since = "2.0.0-beta.3", note = "use `From::<Vec<T>>::from` instead")]
     pub fn from_vec(vec: Vec<Item, Global>) -> Self { vec.into() }
 
-    #[inline]
+    #[inline(always)]
     #[deprecated(since = "2.0.0-beta.3", note = "use `From::<&[Item]>::from` instead")]
     pub fn from_slice_copy(slice: &[Item]) -> Self
     where Item: Clone {
@@ -298,7 +299,7 @@ impl<Item, const INLINE: usize> SmallVec<Item, INLINE, Global> {
     /// The parts own the elements and (if spilled) the heap buffer. Dropping
     /// them leaks both; pass them to [`parts`](Self::parts) to get
     /// a SmallVec back.
-    #[inline]
+    #[inline(always)]
     #[must_use = "dropping the parts leaks the elements and the heap buffer"]
     #[cfg(feature = "internals")]
     #[deprecated(since = "2.0.0-beta.4", note = "")]
@@ -317,7 +318,7 @@ impl<Item, const INLINE: usize> SmallVec<Item, INLINE, Global> {
     ///   the pointer was allocated by `Global` with
     ///   `Layout::array::<Item>(capacity)`.
     /// - The parts are not used again afterwards.
-    #[inline]
+    #[inline(always)]
     #[cfg_attr(feature = "internals", syntax(pub))]
     unsafe fn parts(length: LocatedLength<Item>, raw: RawSmallVec<Item, INLINE>) -> Self {
         unsafe { Self::parts_in(length, raw, Global) }
@@ -337,7 +338,7 @@ impl<Item, const INLINE: usize, Heap: Allocator> SmallVec<Item, INLINE, Heap> {
     ///
     /// `new_len <= self.capacity()` must be true, and all the elements in the
     /// range `..self.length` must be initialized.
-    #[inline]
+    #[inline(always)]
     pub unsafe fn set_len(&mut self, new_len: usize) {
         self.length = LocatedLength::new(new_len, self.length.is_spilled());
     }
@@ -351,23 +352,24 @@ impl<Item, const INLINE: usize, Heap: Allocator> SmallVec<Item, INLINE, Heap> {
         }
     }
 
-    #[inline]
+    #[inline(always)]
     pub const fn len(&self) -> usize { self.length.len() }
 
     #[must_use]
-    #[inline]
+    #[inline(always)]
     pub const fn is_empty(&self) -> bool { self.len() == 0 }
 
-    #[inline]
+    #[inline(always)]
     pub const fn capacity(&self) -> usize {
         // SAFETY: the tag tells which member is active
         unsafe { self.raw.capacity(self.length.is_spilled()) }
     }
 
-    #[inline]
+    #[inline(always)]
     pub const fn spilled(&self) -> bool { self.length.is_spilled() }
 
     #[track_caller]
+    #[inline]
     pub fn drain<R>(&mut self, range: R) -> Drain<'_, Item, INLINE, Heap>
     where R: RangeBounds<usize> {
         let length = self.len();
@@ -479,6 +481,7 @@ impl<Item, const INLINE: usize, Heap: Allocator> SmallVec<Item, INLINE, Heap> {
     /// );
     /// assert_eq!(ones.len(), 3);
     /// ```
+    #[inline]
     pub fn extract_if<F, R>(&mut self, range: R, filter: F) -> ExtractIf<'_, Item, INLINE, F, Heap>
     where
         F: FnMut(&mut Item) -> bool,
@@ -506,6 +509,7 @@ impl<Item, const INLINE: usize, Heap: Allocator> SmallVec<Item, INLINE, Heap> {
     }
 
     #[track_caller]
+    #[inline]
     pub fn splice<Range: RangeBounds<usize>, Iterable: IntoIterator<Item = Item>>(
         &mut self,
         range: Range,
@@ -517,7 +521,7 @@ impl<Item, const INLINE: usize, Heap: Allocator> SmallVec<Item, INLINE, Heap> {
         }
     }
 
-    #[inline]
+    #[inline(always)]
     pub fn push(&mut self, value: Item) { _ = self.push_mut(value); }
 
     #[inline]
@@ -605,6 +609,7 @@ impl<Item, const INLINE: usize, Heap: Allocator> SmallVec<Item, INLINE, Heap> {
         }
     }
 
+    #[inline]
     pub fn try_grow(&mut self, new_capacity: usize) -> Result<(), SmallVecError> {
         if Self::IS_ZST {
             return Ok(());
@@ -868,7 +873,7 @@ impl<Item, const INLINE: usize, Heap: Allocator> SmallVec<Item, INLINE, Heap> {
         }
     }
 
-    #[inline]
+    #[inline(always)]
     #[track_caller]
     pub fn insert(&mut self, index: usize, value: Item) { _ = self.insert_mut(index, value); }
 
@@ -927,33 +932,33 @@ impl<Item, const INLINE: usize, Heap: Allocator> SmallVec<Item, INLINE, Heap> {
         since = "2.0.0-beta.3",
         note = "use `<SmallVec<Item, INLINE, Heap> as AsRef<[Item]>>::as_ref` instead"
     )]
-    #[inline]
+    #[inline(always)]
     pub fn as_slice(&self) -> &[Item] { self.as_ref() }
 
     #[deprecated(
         since = "2.0.0-beta.3",
         note = "use `<SmallVec<Item, INLINE, Heap> as AsMut<[Item]>>::as_mut` instead"
     )]
-    #[inline]
+    #[inline(always)]
     pub fn as_mut_slice(&mut self) -> &mut [Item] { self.as_mut() }
 
-    #[inline]
+    #[inline(always)]
     pub const fn as_ptr(&self) -> *const Item {
         // SAFETY: the tag tells which member is active
         unsafe { self.raw.as_ptr(self.length.is_spilled()) }
     }
 
-    #[inline]
+    #[inline(always)]
     pub const fn as_mut_ptr(&mut self) -> *mut Item {
         // SAFETY: see above
         unsafe { self.raw.as_mut_ptr(self.length.is_spilled()) }
     }
 
-    #[inline]
+    #[inline(always)]
     #[deprecated(since = "2.0.0", note = "use `Into::<Vec<Item>>::into` instead")]
     pub fn into_vec(self) -> Vec<Item, Heap> { self.into() }
 
-    #[inline]
+    #[inline(always)]
     #[deprecated(since = "2.0.0", note = "use `Into::<Box<[Item]>>::into` instead")]
     pub fn into_boxed_slice(self) -> Box<[Item], Heap> { self.into() }
 
@@ -980,7 +985,7 @@ impl<Item, const INLINE: usize, Heap: Allocator> SmallVec<Item, INLINE, Heap> {
         }
     }
 
-    #[inline]
+    #[inline(always)]
     pub fn retain<F: FnMut(&Item) -> bool>(&mut self, mut f: F) { self.retain_mut(|elem| f(elem)) }
 
     #[inline]
@@ -1013,6 +1018,7 @@ impl<Item, const INLINE: usize, Heap: Allocator> SmallVec<Item, INLINE, Heap> {
 
         impl<Item, const INLINE: usize, Heap: Allocator> Drop for Guard<'_, Item, INLINE, Heap> {
             #[cold]
+            #[inline]
             fn drop(&mut self) {
                 let remaining = self.original_len - self.read;
                 // SAFETY: Trailing unchecked items must be valid since we never
@@ -1085,13 +1091,13 @@ impl<Item, const INLINE: usize, Heap: Allocator> SmallVec<Item, INLINE, Heap> {
         _ = ManuallyDrop::new(g);
     }
 
-    #[inline]
+    #[inline(always)]
     pub fn dedup(&mut self)
     where Item: PartialEq {
         self.dedup_by(|a, b| a == b);
     }
 
-    #[inline]
+    #[inline(always)]
     pub fn dedup_by_key<F, K>(&mut self, mut key: F)
     where
         F: FnMut(&mut Item) -> K,
@@ -1130,6 +1136,7 @@ impl<Item, const INLINE: usize, Heap: Allocator> SmallVec<Item, INLINE, Heap> {
         self.truncate(w);
     }
 
+    #[inline]
     pub fn resize_with<F>(&mut self, new_len: usize, f: F)
     where F: FnMut() -> Item {
         let old_len = self.len();
@@ -1141,6 +1148,7 @@ impl<Item, const INLINE: usize, Heap: Allocator> SmallVec<Item, INLINE, Heap> {
     }
 
     #[track_caller]
+    #[inline]
     pub fn leak<'valid>(self) -> &'valid mut [Item] {
         let (length, spilled) = self.length.parts();
         if !spilled {
@@ -1190,6 +1198,7 @@ impl<Item, const INLINE: usize, Heap: Allocator> SmallVec<Item, INLINE, Heap> {
     }
 
     #[track_caller]
+    #[inline]
     pub fn extend_from_within_copy<R>(&mut self, source: R)
     where
         R: RangeBounds<usize>,
@@ -1215,6 +1224,7 @@ impl<Item, const INLINE: usize, Heap: Allocator> SmallVec<Item, INLINE, Heap> {
     }
 
     #[track_caller]
+    #[inline]
     pub fn insert_from_slice_copy(&mut self, index: usize, other: &[Item])
     where Item: Copy {
         let l = self.len();
@@ -1236,6 +1246,7 @@ impl<Item, const INLINE: usize, Heap: Allocator> SmallVec<Item, INLINE, Heap> {
         }
     }
 
+    #[inline]
     pub const fn new_in(allocator: Heap) -> SmallVec<Item, INLINE, Heap> {
         Self {
             length: LocatedLength::new(0, false),
@@ -1244,6 +1255,7 @@ impl<Item, const INLINE: usize, Heap: Allocator> SmallVec<Item, INLINE, Heap> {
         }
     }
 
+    #[inline]
     pub fn try_with_capacity_in(capacity: usize, allocator: Heap) -> Result<Self, SmallVecError> {
         let mut this = Self::new_in(allocator);
         if capacity > Self::inline_size() && !Self::IS_ZST {
@@ -1260,6 +1272,7 @@ impl<Item, const INLINE: usize, Heap: Allocator> SmallVec<Item, INLINE, Heap> {
     }
 
     #[track_caller]
+    #[inline]
     pub fn with_capacity_in(capacity: usize, allocator: Heap) -> Self {
         match Self::try_with_capacity_in(capacity, allocator) {
             Ok(vec) => vec,
@@ -1267,7 +1280,7 @@ impl<Item, const INLINE: usize, Heap: Allocator> SmallVec<Item, INLINE, Heap> {
         }
     }
 
-    #[inline]
+    #[inline(always)]
     #[must_use = "dropping the parts leaks the elements and the heap buffer"]
     #[cfg(feature = "internals")]
     #[deprecated(since = "2.0.0-beta.4", note = "")]
@@ -1307,11 +1320,12 @@ impl<Item: Clone, const INLINE: usize, Heap: Allocator> SmallVec<Item, INLINE, H
         }
     }
 
-    #[inline]
+    #[inline(always)]
     #[deprecated(since = "2.0.0-beta.3", note = "use `Extend::<&Item>::extend` instead")]
     pub fn extend_from_slice(&mut self, other: &[Item]) { self.extend(other.iter()) }
 
     #[track_caller]
+    #[inline]
     pub fn extend_from_within<R>(&mut self, source: R)
     where R: RangeBounds<usize> {
         let source = Range::new(source, self.len());
@@ -1413,6 +1427,7 @@ impl<Heap: Allocator> Drop for DropDealloc<'_, Heap> {
 impl<#[cfg_attr(feature = "nightly", may_dangle)] Item, const INLINE: usize, Heap: Allocator> Drop
     for SmallVec<Item, INLINE, Heap>
 {
+    #[inline]
     fn drop(&mut self) {
         let (length, spilled) = self.length.parts();
         // SAFETY: the tag tells which member is active
@@ -1439,6 +1454,7 @@ impl<#[cfg_attr(feature = "nightly", may_dangle)] Item, const INLINE: usize, Hea
 /// It is recommended to use the macro instead of using this function.
 #[doc(hidden)]
 #[track_caller]
+#[inline]
 pub fn from_elem<Item: Clone, const INLINE: usize>(
     elem: Item,
     n: usize
@@ -1461,6 +1477,7 @@ impl<Item, const INLINE: usize> SmallVec<Item, INLINE, Global> {
     /// # Safety
     ///
     /// The caller must ensure that `n <= Self::inline_size()`.
+    #[inline]
     unsafe fn from_elem_fallback(elem: Item, n: usize) -> Self
     where Item: Clone {
         let mut result = Self::new();
@@ -1493,6 +1510,7 @@ impl<Item, const INLINE: usize> SmallVec<Item, INLINE, Global> {
         result
     }
 
+    #[inline]
     fn from_iter_fallback<I>(iter: I) -> Self
     where I: Iterator<Item = Item> {
         let (size, _) = iter.size_hint();
@@ -1507,6 +1525,7 @@ impl<Item, const INLINE: usize> SmallVec<Item, INLINE, Global> {
     /// # Safety
     ///
     /// The caller must ensure that `slice.len() <= Self::inline_size()`.
+    #[inline]
     unsafe fn from_slice_fallback(slice: &[Item]) -> Self
     where Item: Clone {
         let mut v = Self::new();
@@ -1540,6 +1559,7 @@ impl<Item, const INLINE: usize> SmallVec<Item, INLINE, Global> {
 }
 
 impl<Item, const INLINE: usize, Heap: Allocator> SmallVec<Item, INLINE, Heap> {
+    #[inline]
     fn extend_fallback<I>(&mut self, iter: I)
     where I: IntoIterator<Item = Item> {
         let mut iterator = iter.into_iter();
@@ -1569,6 +1589,7 @@ impl<Item, const INLINE: usize, Heap: Allocator> SmallVec<Item, INLINE, Heap> {
     ///   `source.len()`.
     ///
     /// [`extend_from_within`]: SmallVec::extend_from_within
+    #[inline]
     unsafe fn extend_from_within_fallback(&mut self, source: Range<usize>)
     where Item: Clone {
         let old_len = self.len();
@@ -1602,6 +1623,7 @@ impl<Item, const INLINE: usize, Heap: Allocator> SmallVec<Item, INLINE, Heap> {
         }
     }
 
+    #[inline]
     fn clone_from_fallback(&mut self, source: &[Item])
     where Item: Clone {
         // Inspired from `impl Clone for Vec`.
@@ -1635,26 +1657,26 @@ impl<Item: Clone, const INLINE: usize, Heap: Allocator + Clone> Clone
         vec
     }
 
-    #[inline]
+    #[inline(always)]
     fn clone_from(&mut self, source: &Self) { self.clone_from_fallback(source); }
 }
 
 impl<Item, const INLINE: usize, Heap: Allocator> Extend<Item> for SmallVec<Item, INLINE, Heap> {
-    #[inline]
+    #[inline(always)]
     fn extend<I: IntoIterator<Item = Item>>(&mut self, iter: I) { self.extend_fallback(iter); }
 }
 
 impl<'valid, Item: Clone + 'valid, const INLINE: usize, Heap: Allocator> Extend<&'valid Item>
     for SmallVec<Item, INLINE, Heap>
 {
-    #[inline]
+    #[inline(always)]
     fn extend<I: IntoIterator<Item = &'valid Item>>(&mut self, iter: I) {
         self.extend_fallback(iter.into_iter().cloned());
     }
 }
 
 impl<Item, const INLINE: usize> FromIterator<Item> for SmallVec<Item, INLINE, Global> {
-    #[inline]
+    #[inline(always)]
     fn from_iter<I: IntoIterator<Item = Item>>(iter: I) -> Self {
         Self::from_iter_fallback(iter.into_iter())
     }
@@ -1666,6 +1688,7 @@ impl<'valid, Item, const INLINE: usize, Heap: Allocator> IntoIterator
     type IntoIter = Iter<'valid, Item>;
     type Item = &'valid Item;
 
+    #[inline(always)]
     fn into_iter(self) -> Self::IntoIter { self.iter() }
 }
 
@@ -1675,14 +1698,17 @@ impl<'valid, Item, const INLINE: usize, Heap: Allocator> IntoIterator
     type IntoIter = IterMut<'valid, Item>;
     type Item = &'valid mut Item;
 
+    #[inline(always)]
     fn into_iter(self) -> Self::IntoIter { self.iter_mut() }
 }
 
 impl<Item: Hash, const INLINE: usize, Heap: Allocator> Hash for SmallVec<Item, INLINE, Heap> {
+    #[inline(always)]
     fn hash<H: Hasher>(&self, state: &mut H) { self.as_ref().hash(state) }
 }
 
 impl<Item: Debug, const INLINE: usize, Heap: Allocator> Debug for SmallVec<Item, INLINE, Heap> {
+    #[inline(always)]
     fn fmt(&self, f: &mut Formatter<'_>) -> Formatted {
         f.debug_list().entries(self.iter()).finish()
     }
@@ -1690,6 +1716,7 @@ impl<Item: Debug, const INLINE: usize, Heap: Allocator> Debug for SmallVec<Item,
 
 #[cfg(feature = "zeroize")]
 impl<Item: Zeroize, const INLINE: usize, Heap: Allocator> Zeroize for SmallVec<Item, INLINE, Heap> {
+    #[inline]
     fn zeroize(&mut self) {
         // Wipe the spare capacity before `clear` resets the length to zero,
         // otherwise it would cover the whole allocation and wipe the elements
@@ -1709,12 +1736,15 @@ impl<Item: Zeroize, const INLINE: usize, Heap: Allocator> Zeroize for SmallVec<I
 impl<'valid, Item, const INLINE: usize> Arbitrary<'valid> for SmallVec<Item, INLINE, Global>
 where Item: Arbitrary<'valid>
 {
+    #[inline(always)]
     fn arbitrary(u: &mut Unstructured<'valid>) -> Random<Self> { u.arbitrary_iter()?.collect() }
 
+    #[inline(always)]
     fn arbitrary_take_rest(u: Unstructured<'valid>) -> Random<Self> {
         u.arbitrary_take_rest_iter()?.collect()
     }
 
+    #[inline(always)]
     fn size_hint(depth: usize) -> (usize, Option<usize>) {
         and(<usize as Arbitrary>::size_hint(depth), (0, None))
     }
@@ -1728,6 +1758,7 @@ where Item: Proptest + Debug
     type Parameters = SizeRange;
     type Strategy = StrategyMap<VecStrategy<Item::Strategy>, fn(std::vec::Vec<Item>) -> Self>;
 
+    #[inline]
     fn arbitrary_with(args: Self::Parameters) -> Self::Strategy {
         create_vec(Item::arbitrary(), args)
             .prop_map(|v: std::vec::Vec<Item>| SmallVec::from_iter(v.into_iter()))
@@ -1749,13 +1780,13 @@ impl<const INLINE: usize, Heap: Allocator> Write for SmallVec<u8, INLINE, Heap> 
         Ok(())
     }
 
-    #[inline]
+    #[inline(always)]
     fn flush(&mut self) -> IoResult<()> { Ok(()) }
 }
 
 #[cfg(feature = "bytes")]
 unsafe impl<const INLINE: usize, Heap: Allocator> BufMut for SmallVec<u8, INLINE, Heap> {
-    #[inline]
+    #[inline(always)]
     fn remaining_mut(&self) -> usize {
         // A vector can never have more than isize::MAX bytes
         isize::MAX as usize - self.len()
@@ -1806,7 +1837,7 @@ unsafe impl<const INLINE: usize, Heap: Allocator> BufMut for SmallVec<u8, INLINE
         }
     }
 
-    #[inline]
+    #[inline(always)]
     fn put_slice(&mut self, source: &[u8]) { self.extend(source); }
 
     #[inline]
@@ -1819,6 +1850,7 @@ unsafe impl<const INLINE: usize, Heap: Allocator> BufMut for SmallVec<u8, INLINE
 
 #[cfg(feature = "defmt")]
 impl<Item: Format, const INLINE: usize, Heap: Allocator> Format for SmallVec<Item, INLINE, Heap> {
+    #[inline(always)]
     fn format(&self, fmt: DeFormatter<'_>) {
         dewrite!(fmt, "{=[?]}", self.as_ref());
     }
@@ -1837,12 +1869,16 @@ impl_rts_array!(
 impl<Item: JsonSchema, const INLINE: usize, Heap: Allocator> JsonSchema
     for SmallVec<Item, INLINE, Heap>
 {
+    #[inline(always)]
     fn inline_schema() -> bool { <alloc::vec::Vec<Item> as JsonSchema>::inline_schema() }
 
+    #[inline(always)]
     fn schema_name() -> Cow<'static, str> { <alloc::vec::Vec<Item> as JsonSchema>::schema_name() }
 
+    #[inline(always)]
     fn schema_id() -> Cow<'static, str> { <alloc::vec::Vec<Item> as JsonSchema>::schema_id() }
 
+    #[inline(always)]
     fn json_schema(generator: &mut SchemaGenerator) -> Schema {
         <alloc::vec::Vec<Item> as JsonSchema>::json_schema(generator)
     }
