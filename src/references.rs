@@ -18,6 +18,11 @@ use {
         }
     }
 };
+#[cfg(feature = "stable-deref")]
+use {
+    alloc::alloc::Global,
+    stable_deref_trait::StableDeref
+};
 
 impl<Item, const INLINE: usize, Heap: Allocator> Borrow<[Item]> for SmallVec<Item, INLINE, Heap> {
     #[inline]
@@ -63,3 +68,12 @@ impl<Item, const INLINE: usize, Heap: Allocator> DerefMut for SmallVec<Item, INL
 
 #[cfg(feature = "nightly")]
 unsafe impl<Item, const INLINE: usize, Heap: Allocator> Pure for SmallVec<Item, INLINE, Heap> {}
+
+#[cfg(feature = "stable-deref")]
+#[cfg_attr(docsrs, doc(cfg(feature = "stable-deref")))]
+// SAFETY: with no inline capacity, elements always live in a heap allocation,
+// which does not move when the `SmallVec` is moved, just like `Vec`. Only an
+// empty `SmallVec` or one holding zero-sized items stays inline, and those
+// slices cover no bytes. A `SmallVec` with inline capacity cannot implement
+// this, since its inline elements move together with it.
+unsafe impl<Item> StableDeref for SmallVec<Item, 0, Global> {}

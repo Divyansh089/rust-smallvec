@@ -67,8 +67,6 @@ use proptest::{
 };
 #[cfg(any(feature = "internals", feature = "nightly"))]
 use smallvec_macro::syntax;
-#[cfg(feature = "stable-deref")]
-use stable_deref_trait::StableDeref;
 #[cfg(feature = "std")]
 use std::io::{
     Result as IoResult,
@@ -1859,12 +1857,3 @@ impl<Item: JsonSchema, const INLINE: usize, Heap: Allocator> JsonSchema
 // - `Global` is a zero-sized type in all three allocator backends.
 // `Item: Zeroable` is not needed: no `Item` is read from zeroed storage.
 unsafe impl<Item, const INLINE: usize> Zeroable for SmallVec<Item, INLINE, Global> {}
-
-#[cfg(feature = "stable-deref")]
-#[cfg_attr(docsrs, doc(cfg(feature = "stable-deref")))]
-// SAFETY: with no inline capacity, elements always live in a heap allocation,
-// which does not move when the `SmallVec` is moved, just like `Vec`. Only an
-// empty `SmallVec` or one holding zero-sized items stays inline, and those
-// slices cover no bytes. A `SmallVec` with inline capacity cannot implement
-// this, since its inline elements move together with it.
-unsafe impl<Item> StableDeref for SmallVec<Item, 0, Global> {}
