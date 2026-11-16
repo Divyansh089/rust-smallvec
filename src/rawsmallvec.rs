@@ -39,7 +39,6 @@ pub union RawSmallVec<Item, const INLINE: usize> {
 // The active member is tracked by `LocatedLength`, not by the union itself, so
 // neither member can be read safely here.
 impl<Item, const INLINE: usize> Debug for RawSmallVec<Item, INLINE> {
-    #[inline(always)]
     fn fmt(&self, f: &mut Formatter<'_>) -> Format {
         f.debug_struct("RawSmallVec").finish_non_exhaustive()
     }
@@ -47,7 +46,6 @@ impl<Item, const INLINE: usize> Debug for RawSmallVec<Item, INLINE> {
 
 #[cfg(feature = "defmt")]
 impl<Item, const INLINE: usize> DeFormat for RawSmallVec<Item, INLINE> {
-    #[inline(always)]
     fn format(&self, fmt: DeFormatter<'_>) {
         dewrite!(fmt, "RawSmallVec {{ .. }}");
     }

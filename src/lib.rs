@@ -609,7 +609,6 @@ impl<Item, const INLINE: usize, Heap: Allocator> SmallVec<Item, INLINE, Heap> {
         }
     }
 
-    #[inline]
     pub fn try_grow(&mut self, new_capacity: usize) -> Result<(), SmallVecError> {
         if Self::IS_ZST {
             return Ok(());
@@ -1255,7 +1254,6 @@ impl<Item, const INLINE: usize, Heap: Allocator> SmallVec<Item, INLINE, Heap> {
         }
     }
 
-    #[inline]
     pub fn try_with_capacity_in(capacity: usize, allocator: Heap) -> Result<Self, SmallVecError> {
         let mut this = Self::new_in(allocator);
         if capacity > Self::inline_size() && !Self::IS_ZST {
@@ -1477,7 +1475,6 @@ impl<Item, const INLINE: usize> SmallVec<Item, INLINE, Global> {
     /// # Safety
     ///
     /// The caller must ensure that `n <= Self::inline_size()`.
-    #[inline]
     unsafe fn from_elem_fallback(elem: Item, n: usize) -> Self
     where Item: Clone {
         let mut result = Self::new();
@@ -1510,7 +1507,6 @@ impl<Item, const INLINE: usize> SmallVec<Item, INLINE, Global> {
         result
     }
 
-    #[inline]
     fn from_iter_fallback<I>(iter: I) -> Self
     where I: Iterator<Item = Item> {
         let (size, _) = iter.size_hint();
@@ -1525,7 +1521,6 @@ impl<Item, const INLINE: usize> SmallVec<Item, INLINE, Global> {
     /// # Safety
     ///
     /// The caller must ensure that `slice.len() <= Self::inline_size()`.
-    #[inline]
     unsafe fn from_slice_fallback(slice: &[Item]) -> Self
     where Item: Clone {
         let mut v = Self::new();
@@ -1559,7 +1554,6 @@ impl<Item, const INLINE: usize> SmallVec<Item, INLINE, Global> {
 }
 
 impl<Item, const INLINE: usize, Heap: Allocator> SmallVec<Item, INLINE, Heap> {
-    #[inline]
     fn extend_fallback<I>(&mut self, iter: I)
     where I: IntoIterator<Item = Item> {
         let mut iterator = iter.into_iter();
@@ -1589,7 +1583,6 @@ impl<Item, const INLINE: usize, Heap: Allocator> SmallVec<Item, INLINE, Heap> {
     ///   `source.len()`.
     ///
     /// [`extend_from_within`]: SmallVec::extend_from_within
-    #[inline]
     unsafe fn extend_from_within_fallback(&mut self, source: Range<usize>)
     where Item: Clone {
         let old_len = self.len();
@@ -1623,7 +1616,6 @@ impl<Item, const INLINE: usize, Heap: Allocator> SmallVec<Item, INLINE, Heap> {
         }
     }
 
-    #[inline]
     fn clone_from_fallback(&mut self, source: &[Item])
     where Item: Clone {
         // Inspired from `impl Clone for Vec`.
@@ -1703,12 +1695,10 @@ impl<'valid, Item, const INLINE: usize, Heap: Allocator> IntoIterator
 }
 
 impl<Item: Hash, const INLINE: usize, Heap: Allocator> Hash for SmallVec<Item, INLINE, Heap> {
-    #[inline(always)]
     fn hash<H: Hasher>(&self, state: &mut H) { self.as_ref().hash(state) }
 }
 
 impl<Item: Debug, const INLINE: usize, Heap: Allocator> Debug for SmallVec<Item, INLINE, Heap> {
-    #[inline(always)]
     fn fmt(&self, f: &mut Formatter<'_>) -> Formatted {
         f.debug_list().entries(self.iter()).finish()
     }
@@ -1736,15 +1726,12 @@ impl<Item: Zeroize, const INLINE: usize, Heap: Allocator> Zeroize for SmallVec<I
 impl<'valid, Item, const INLINE: usize> Arbitrary<'valid> for SmallVec<Item, INLINE, Global>
 where Item: Arbitrary<'valid>
 {
-    #[inline(always)]
     fn arbitrary(u: &mut Unstructured<'valid>) -> Random<Self> { u.arbitrary_iter()?.collect() }
 
-    #[inline(always)]
     fn arbitrary_take_rest(u: Unstructured<'valid>) -> Random<Self> {
         u.arbitrary_take_rest_iter()?.collect()
     }
 
-    #[inline(always)]
     fn size_hint(depth: usize) -> (usize, Option<usize>) {
         and(<usize as Arbitrary>::size_hint(depth), (0, None))
     }
@@ -1850,7 +1837,6 @@ unsafe impl<const INLINE: usize, Heap: Allocator> BufMut for SmallVec<u8, INLINE
 
 #[cfg(feature = "defmt")]
 impl<Item: Format, const INLINE: usize, Heap: Allocator> Format for SmallVec<Item, INLINE, Heap> {
-    #[inline(always)]
     fn format(&self, fmt: DeFormatter<'_>) {
         dewrite!(fmt, "{=[?]}", self.as_ref());
     }
@@ -1869,16 +1855,12 @@ impl_rts_array!(
 impl<Item: JsonSchema, const INLINE: usize, Heap: Allocator> JsonSchema
     for SmallVec<Item, INLINE, Heap>
 {
-    #[inline(always)]
     fn inline_schema() -> bool { <alloc::vec::Vec<Item> as JsonSchema>::inline_schema() }
 
-    #[inline(always)]
     fn schema_name() -> Cow<'static, str> { <alloc::vec::Vec<Item> as JsonSchema>::schema_name() }
 
-    #[inline(always)]
     fn schema_id() -> Cow<'static, str> { <alloc::vec::Vec<Item> as JsonSchema>::schema_id() }
 
-    #[inline(always)]
     fn json_schema(generator: &mut SchemaGenerator) -> Schema {
         <alloc::vec::Vec<Item> as JsonSchema>::json_schema(generator)
     }

@@ -35,7 +35,6 @@ impl<Item> Clone for LocatedLength<Item> {
 impl<Item> Copy for LocatedLength<Item> {}
 
 impl<Item> Debug for LocatedLength<Item> {
-    #[inline]
     fn fmt(&self, f: &mut Formatter<'_>) -> Format {
         let (length, spilled) = self.parts();
         f.debug_struct("LocatedLength")
@@ -47,7 +46,6 @@ impl<Item> Debug for LocatedLength<Item> {
 
 #[cfg(feature = "defmt")]
 impl<Item> DeFormat for LocatedLength<Item> {
-    #[inline]
     fn format(&self, fmt: DeFormatter<'_>) {
         let (length, spilled) = self.parts();
         dewrite!(

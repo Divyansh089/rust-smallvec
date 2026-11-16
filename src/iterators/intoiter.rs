@@ -212,7 +212,6 @@ impl<Item, const INLINE: usize, Heap: Allocator> IntoIterator for SmallVec<Item,
 }
 
 impl<Item: Debug, const INLINE: usize, Heap: Allocator> Debug for IntoIter<Item, INLINE, Heap> {
-    #[inline(always)]
     fn fmt(&self, f: &mut Formatter<'_>) -> Format {
         f.debug_tuple("IntoIter").field(&self.as_ref()).finish()
     }
@@ -222,7 +221,6 @@ impl<Item: Debug, const INLINE: usize, Heap: Allocator> Debug for IntoIter<Item,
 impl<Item: DeFormat, const INLINE: usize, Heap: Allocator> DeFormat
     for IntoIter<Item, INLINE, Heap>
 {
-    #[inline(always)]
     fn format(&self, fmt: DeFormatter<'_>) {
         dewrite!(fmt, "IntoIter({=[?]})", self.as_ref());
     }

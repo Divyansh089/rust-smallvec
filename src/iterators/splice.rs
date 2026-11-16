@@ -92,7 +92,6 @@ impl<Iterable: Iterator, const INLINE: usize, Heap: Allocator> Drop
 impl<'valid, Iterable: Iterator<Item: Debug> + 'valid, const INLINE: usize, Heap: Allocator> Debug
     for Splice<'valid, Iterable, INLINE, Heap>
 {
-    #[inline(always)]
     fn fmt(&self, f: &mut Formatter<'_>) -> Format {
         f.debug_tuple("Splice").field(&self.drain).finish()
     }
@@ -102,7 +101,6 @@ impl<'valid, Iterable: Iterator<Item: Debug> + 'valid, const INLINE: usize, Heap
 impl<'valid, Iterable: Iterator<Item: DeFormat> + 'valid, const INLINE: usize, Heap: Allocator>
     DeFormat for Splice<'valid, Iterable, INLINE, Heap>
 {
-    #[inline(always)]
     fn format(&self, fmt: DeFormatter<'_>) {
         dewrite!(fmt, "Splice({})", self.drain);
     }

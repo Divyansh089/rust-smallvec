@@ -46,7 +46,6 @@ where
     F: FnMut(&mut Item) -> bool,
     Item: Debug
 {
-    #[inline]
     fn fmt(&self, f: &mut Formatter<'_>) -> Format {
         f.debug_tuple("ExtractIf")
             .field(&self.vec.as_ref())
@@ -61,7 +60,6 @@ where
     F: FnMut(&mut Item) -> bool,
     Item: DeFormat
 {
-    #[inline(always)]
     fn format(&self, fmt: DeFormatter<'_>) {
         dewrite!(fmt, "ExtractIf({=[?]})", self.vec.as_ref());
     }
