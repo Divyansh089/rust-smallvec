@@ -118,7 +118,7 @@ fn bench_smallvec_from_slice_spilled() -> SmallVec<u64, INLINE_CAP> {
 fn bench_smallvec_extend_from_slice_inline() -> SmallVec<u64, INLINE_CAP> {
     let mut v = SmallVec::<u64, INLINE_CAP>::new();
     let data = [42u64; INLINE_CAP];
-    v.extend(black_box(&data));
+    v.extend_from_slice_copy(black_box(&data));
     v
 }
 
@@ -126,7 +126,40 @@ fn bench_smallvec_extend_from_slice_inline() -> SmallVec<u64, INLINE_CAP> {
 fn bench_smallvec_extend_from_slice_spilled() -> SmallVec<u64, INLINE_CAP> {
     let mut v = SmallVec::<u64, INLINE_CAP>::new();
     let data = [42u64; SPILLED_COUNT];
+    v.extend_from_slice_copy(black_box(&data));
+    v
+}
+
+// The generic `Extend<&Item>` path, which clones element by element.
+#[library_benchmark]
+fn bench_smallvec_extend_ref_inline() -> SmallVec<u64, INLINE_CAP> {
+    let mut v = SmallVec::<u64, INLINE_CAP>::new();
+    let data = [42u64; INLINE_CAP];
     v.extend(black_box(&data));
+    v
+}
+
+#[library_benchmark]
+fn bench_smallvec_extend_ref_spilled() -> SmallVec<u64, INLINE_CAP> {
+    let mut v = SmallVec::<u64, INLINE_CAP>::new();
+    let data = [42u64; SPILLED_COUNT];
+    v.extend(black_box(&data));
+    v
+}
+
+#[library_benchmark]
+fn bench_smallvec_insert_from_slice_inline() -> SmallVec<u64, INLINE_CAP> {
+    let mut v: SmallVec<u64, INLINE_CAP> = smallvec::from_elem(0, INLINE_CAP / 2);
+    let data = [42u64; INLINE_CAP / 2];
+    v.insert_from_slice_copy(black_box(INLINE_CAP / 4), black_box(&data));
+    v
+}
+
+#[library_benchmark]
+fn bench_smallvec_insert_from_slice_spilled() -> SmallVec<u64, INLINE_CAP> {
+    let mut v: SmallVec<u64, INLINE_CAP> = smallvec::from_elem(0, SPILLED_COUNT / 2);
+    let data = [42u64; SPILLED_COUNT / 2];
+    v.insert_from_slice_copy(black_box(SPILLED_COUNT / 4), black_box(&data));
     v
 }
 
@@ -245,6 +278,10 @@ library_benchmark_group!(
         bench_smallvec_from_slice_spilled,
         bench_smallvec_extend_from_slice_inline,
         bench_smallvec_extend_from_slice_spilled,
+        bench_smallvec_extend_ref_inline,
+        bench_smallvec_extend_ref_spilled,
+        bench_smallvec_insert_from_slice_inline,
+        bench_smallvec_insert_from_slice_spilled,
 );
 
 library_benchmark_group!(
