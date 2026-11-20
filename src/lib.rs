@@ -1319,11 +1319,7 @@ impl<Item: Clone, const INLINE: usize, Heap: Allocator> SmallVec<Item, INLINE, H
     }
 
     #[inline(always)]
-    #[deprecated(
-        since = "2.0.0-beta.3",
-        note = "use `Extend::<&Item>::extend` instead, or `extend_from_slice_copy` for `Copy` \
-                items"
-    )]
+    #[deprecated(since = "2.0.0-beta.3", note = "use `Extend::<&Item>::extend` instead")]
     pub fn extend_from_slice(&mut self, other: &[Item]) { self.extend(other.iter()) }
 
     #[track_caller]
