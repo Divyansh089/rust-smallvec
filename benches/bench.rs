@@ -15,7 +15,9 @@ use {
 const VEC_SIZE: usize = 16;
 const SPILLED_SIZE: usize = 100;
 
-trait Vector<T>: for<'valid> From<&'valid [T]> + Extend<T> + FromIterator<T> {
+trait Vector<T>:
+    for<'valid> From<&'valid [T]> + Extend<T> + for<'valid> Extend<&'valid T> + FromIterator<T>
+{
     fn new() -> Self;
     fn push(&mut self, val: T);
     fn pop(&mut self) -> Option<T>;
@@ -24,11 +26,12 @@ trait Vector<T>: for<'valid> From<&'valid [T]> + Extend<T> + FromIterator<T> {
     fn from_elem(val: T, n: usize) -> Self;
     fn from_elems(val: &[T]) -> Self;
     fn extend_from_slice(&mut self, other: &[T]);
+    fn insert_from_slice(&mut self, index: usize, other: &[T]);
     fn retain_mut<F>(&mut self, f: F)
     where F: FnMut(&mut T) -> bool;
 }
 
-impl<T: Copy> Vector<T> for Vec<T> {
+impl<T: Copy + 'static> Vector<T> for Vec<T> {
     fn new() -> Self { Self::with_capacity(VEC_SIZE) }
 
     fn push(&mut self, val: T) { self.push(val) }
@@ -45,13 +48,17 @@ impl<T: Copy> Vector<T> for Vec<T> {
 
     fn extend_from_slice(&mut self, other: &[T]) { Vec::extend_from_slice(self, other) }
 
+    fn insert_from_slice(&mut self, index: usize, other: &[T]) {
+        self.splice(index..index, other.iter().copied());
+    }
+
     fn retain_mut<F>(&mut self, f: F)
     where F: FnMut(&mut T) -> bool {
         self.retain_mut(f)
     }
 }
 
-impl<T: Copy> Vector<T> for SmallVec<T, VEC_SIZE> {
+impl<T: Copy + 'static> Vector<T> for SmallVec<T, VEC_SIZE> {
     fn new() -> Self { Self::new() }
 
     fn push(&mut self, val: T) { self.push(val) }
@@ -66,7 +73,11 @@ impl<T: Copy> Vector<T> for SmallVec<T, VEC_SIZE> {
 
     fn from_elems(val: &[T]) -> Self { SmallVec::from(val) }
 
-    fn extend_from_slice(&mut self, other: &[T]) { SmallVec::extend(self, other) }
+    fn extend_from_slice(&mut self, other: &[T]) { self.extend_from_slice_copy(other) }
+
+    fn insert_from_slice(&mut self, index: usize, other: &[T]) {
+        self.insert_from_slice_copy(index, other)
+    }
 
     fn retain_mut<F>(&mut self, f: F)
     where F: FnMut(&mut T) -> bool {
@@ -110,6 +121,10 @@ make_benches! {
         bench_from_slice_small => gen_from_slice(VEC_SIZE as _),
         bench_extend_from_slice => gen_extend_from_slice(SPILLED_SIZE as _),
         bench_extend_from_slice_small => gen_extend_from_slice(VEC_SIZE as _),
+        bench_extend_ref => gen_extend_ref(SPILLED_SIZE as _),
+        bench_extend_ref_small => gen_extend_ref(VEC_SIZE as _),
+        bench_insert_from_slice => gen_insert_from_slice(SPILLED_SIZE as _),
+        bench_insert_from_slice_small => gen_insert_from_slice(VEC_SIZE as _),
         bench_macro_from_elem => gen_from_elem(SPILLED_SIZE as _),
         bench_macro_from_elem_small => gen_from_elem(VEC_SIZE as _),
         bench_pushpop => gen_pushpop(),
@@ -142,6 +157,10 @@ make_benches! {
         bench_from_slice_small => gen_from_slice(VEC_SIZE as _),
         bench_extend_from_slice => gen_extend_from_slice(SPILLED_SIZE as _),
         bench_extend_from_slice_small => gen_extend_from_slice(VEC_SIZE as _),
+        bench_extend_ref => gen_extend_ref(SPILLED_SIZE as _),
+        bench_extend_ref_small => gen_extend_ref(VEC_SIZE as _),
+        bench_insert_from_slice => gen_insert_from_slice(SPILLED_SIZE as _),
+        bench_insert_from_slice_small => gen_insert_from_slice(VEC_SIZE as _),
         bench_macro_from_elem => gen_from_elem(SPILLED_SIZE as _),
         bench_macro_from_elem_small => gen_from_elem(VEC_SIZE as _),
         bench_pushpop => gen_pushpop(),
@@ -264,6 +283,30 @@ fn gen_extend_from_slice<V: Vector<u64>>(n: u64, b: &mut Bencher<'_>) {
         vec.extend_from_slice(black_box(&v));
         black_box(vec)
     });
+}
+
+// The generic `Extend<&T>` path, which clones element by element.
+fn gen_extend_ref<V: Vector<u64>>(n: u64, b: &mut Bencher<'_>) {
+    let v: Vec<u64> = (0..black_box(n)).collect();
+    b.iter(|| {
+        let mut vec = V::new();
+        vec.extend(black_box(&v));
+        black_box(vec)
+    });
+}
+
+// Inserts the second half into the middle of the first half, so the `_small`
+// variant ends with `n` elements and stays inline.
+fn gen_insert_from_slice<V: Vector<u64>>(n: usize, b: &mut Bencher<'_>) {
+    let half = n / 2;
+    let v: Vec<u64> = (0..half as u64).collect();
+    b.iter_with_setup(
+        || V::from_elem(0, black_box(n - half)),
+        |mut vec| {
+            vec.insert_from_slice(black_box(half / 2), black_box(&v));
+            vec
+        }
+    );
 }
 
 fn gen_pushpop<V: Vector<u64>>(b: &mut Bencher<'_>) {
