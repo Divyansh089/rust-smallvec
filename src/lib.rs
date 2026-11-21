@@ -718,7 +718,7 @@ impl<Item, const INLINE: usize, Heap: Allocator> SmallVec<Item, INLINE, Heap> {
             return;
         }
         if length <= Self::inline_size() {
-            // SAFETY: spilled is true, so we're on the heap
+            // SAFETY: spilled is true, so the heap member is active
             unsafe {
                 let pointer = self.raw.heap;
                 copy_nonoverlapping(
@@ -755,12 +755,12 @@ impl<Item, const INLINE: usize, Heap: Allocator> SmallVec<Item, INLINE, Heap> {
         if !spilled {
             return;
         }
-        // SAFETY: the vector is on the heap
+        // SAFETY: the vector is spilled, so the heap member is active
         let capacity = unsafe { self.raw.heap.len() };
         if capacity > min_capacity {
             let target = length.max(min_capacity);
             if target <= Self::inline_size() {
-                // SAFETY: spilled is true, so we're on the heap
+                // SAFETY: spilled is true, so the heap member is active
                 unsafe {
                     let pointer = self.raw.heap;
                     copy_nonoverlapping(
@@ -970,8 +970,8 @@ impl<Item, const INLINE: usize, Heap: Allocator> SmallVec<Item, INLINE, Heap> {
         if self.len() != INLINE {
             Err(self)
         } else {
-            // when `this` is dropped, the memory is released if it's on the
-            // heap.
+            // when `this` is dropped, the buffer is deallocated if it is
+            // spilled.
             let mut this = self;
             // SAFETY: we release ownership of the elements we hold
             unsafe {
