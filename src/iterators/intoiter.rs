@@ -39,7 +39,7 @@ use {
 pub struct IntoIter<Item, const INLINE: usize, Heap: Allocator = Global> {
     // # Safety
     //
-    // `end` decides whether the data lives on the heap or not
+    // `end` decides whether the data is spilled
     //
     // The members from begin..end are initialized
     raw: RawSmallVec<Item, INLINE>,
