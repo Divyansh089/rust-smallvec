@@ -43,7 +43,7 @@ fn bench_vec_push() -> Vec<u64> {
 }
 
 #[library_benchmark]
-fn bench_vec_push_spilled() -> Vec<u64> {
+fn bench_vec_push_with_spilled_capacity() -> Vec<u64> {
     let mut v = Vec::new();
     for i in 0..(SPILLED_COUNT as u64) {
         v.push(black_box(i));
@@ -410,7 +410,7 @@ fn bench_vec_clear() -> Vec<u64> {
 
 // Shrinks far enough that the items move back inline.
 #[library_benchmark]
-fn bench_smallvec_shrink_to_fit_unspill() -> SmallVec<u64, INLINE_CAP> {
+fn bench_smallvec_shrink_to_fit_back_inline() -> SmallVec<u64, INLINE_CAP> {
     let mut v = smallvec_with(SPILLED_COUNT);
     v.truncate(black_box(INLINE_CAP / 2));
     v.shrink_to_fit();
@@ -500,7 +500,7 @@ library_benchmark_group!(
         bench_smallvec_push_inline,
         bench_smallvec_push_spilled,
         bench_vec_push,
-        bench_vec_push_spilled,
+        bench_vec_push_with_spilled_capacity,
 );
 
 library_benchmark_group!(
@@ -579,7 +579,7 @@ library_benchmark_group!(
 library_benchmark_group!(
     name = shrink_to_fit_group;
     benchmarks =
-        bench_smallvec_shrink_to_fit_unspill,
+        bench_smallvec_shrink_to_fit_back_inline,
         bench_smallvec_shrink_to_fit_spilled,
         bench_vec_shrink_to_fit,
 );
