@@ -20,6 +20,7 @@ use {
     },
     smallvec::SmallVec,
     std::{
+        borrow::Cow,
         hash::DefaultHasher,
         panic::{
             AssertUnwindSafe,
@@ -830,6 +831,40 @@ fn try_into_array() {
     assert_eq!(<[u8; 2]>::try_from(vec.clone()), Err(vec.clone()));
     assert_eq!(<[u8; 3]>::try_from(vec.clone()), Ok([0, 1, 2]));
     assert_eq!(<[u8; 4]>::try_from(vec.clone()), Err(vec));
+}
+
+#[test]
+fn from_cow() {
+    // Borrowed
+    let v: SmallVec<u64, 4> = Cow::Borrowed(&[1u64, 2][..]).into();
+    assert_eq!(&*v, &[1, 2]);
+    assert!(!v.spilled());
+
+    // Owned, empty
+    let v: SmallVec<u64, 4> = Cow::<[u64]>::Owned(Vec::new()).into();
+    assert!(v.is_empty());
+    assert!(!v.spilled());
+
+    // Owned, capacity <= INLINE
+    let mut vec = Vec::with_capacity(2);
+    vec.push(1u64);
+    let v: SmallVec<u64, 4> = Cow::<[u64]>::Owned(vec).into();
+    assert_eq!(&*v, &[1]);
+    // A spilled SmallVec must have a capacity larger than INLINE.
+    if v.spilled() {
+        assert!(v.capacity() > 4);
+    }
+
+    // Owned, larger than INLINE
+    let v: SmallVec<u64, 4> = Cow::<[u64]>::Owned((0..10).collect()).into();
+    assert_eq!(&*v, &(0..10).collect::<Vec<_>>()[..]);
+    assert!(v.spilled());
+    assert!(v.capacity() > 4);
+
+    // Owned, ZST
+    let v: SmallVec<(), 4> = Cow::<[()]>::Owned(vec![(); 10]).into();
+    assert_eq!(v.len(), 10);
+    assert!(!v.spilled());
 }
 
 #[test]
