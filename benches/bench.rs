@@ -363,8 +363,8 @@ fn gen_retain_mut_none<V: Vector<u64>>(n: usize, b: &mut Bencher<'_>) {
     );
 }
 
-fn bench_macro_from_list(c: &mut Criterion) {
-    c.bench_function("bench_macro_from_list", |b| {
+fn bench_from_array_spilled(c: &mut Criterion) {
+    c.bench_function("bench_from_array_spilled", |b| {
         b.iter(|| {
             let vec: SmallVec<u64, 16> = SmallVec::from([
                 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 20, 24, 32, 36, 0x40,
@@ -376,8 +376,8 @@ fn bench_macro_from_list(c: &mut Criterion) {
     });
 }
 
-fn bench_macro_from_list_vec(c: &mut Criterion) {
-    c.bench_function("bench_macro_from_list_vec", |b| {
+fn bench_vec_literal(c: &mut Criterion) {
+    c.bench_function("bench_vec_literal", |b| {
         b.iter(|| {
             let vec: Vec<u64> = vec![
                 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 20, 24, 32, 36, 0x40,
@@ -397,7 +397,7 @@ criterion_group! {
     targets =
     bench_smallvec,
     bench_vec,
-    bench_macro_from_list,
-    bench_macro_from_list_vec
+    bench_from_array_spilled,
+    bench_vec_literal
 }
 criterion_main!(benches);
