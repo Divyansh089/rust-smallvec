@@ -847,13 +847,13 @@ fn from_cow() {
 
     // Owned, capacity <= INLINE
     let mut vec = Vec::with_capacity(2);
-    vec.push(1u64);
+    vec.extend([1u64, 2]);
+    assert!(vec.capacity() <= 4); // precondition
+
     let v: SmallVec<u64, 4> = Cow::<[u64]>::Owned(vec).into();
-    assert_eq!(&*v, &[1]);
-    // A spilled SmallVec must have a capacity larger than INLINE.
-    if v.spilled() {
-        assert!(v.capacity() > 4);
-    }
+    assert_eq!(&*v, &[1, 2]);
+    assert!(!v.spilled());
+    assert_eq!(v.capacity(), 4);
 
     // Owned, larger than INLINE
     let v: SmallVec<u64, 4> = Cow::<[u64]>::Owned((0..10).collect()).into();
@@ -865,6 +865,30 @@ fn from_cow() {
     let v: SmallVec<(), 4> = Cow::<[()]>::Owned(vec![(); 10]).into();
     assert_eq!(v.len(), 10);
     assert!(!v.spilled());
+}
+
+#[test]
+fn from_cow_drops_each_item_once() {
+    let item = Rc::new(());
+
+    // Borrowed: items are cloned, the originals stay with the slice.
+    let slice = [item.clone(), item.clone()];
+    let v: SmallVec<Rc<()>, 4> = Cow::Borrowed(&slice[..]).into();
+    assert_eq!(Rc::strong_count(&item), 5);
+    drop(v);
+    drop(slice);
+    assert_eq!(Rc::strong_count(&item), 1);
+
+    // Owned, capacity <= INLINE (moved inline), and larger than INLINE
+    // (buffer taken over).
+    for count in [2, 10] {
+        let mut vec = Vec::with_capacity(count);
+        vec.extend(repeat_n(item.clone(), count));
+        let v: SmallVec<Rc<()>, 4> = Cow::<[Rc<()>]>::Owned(vec).into();
+        assert_eq!(Rc::strong_count(&item), count + 1);
+        drop(v);
+        assert_eq!(Rc::strong_count(&item), 1);
+    }
 }
 
 #[test]
