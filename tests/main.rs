@@ -20,6 +20,7 @@ use {
     },
     smallvec::SmallVec,
     std::{
+        borrow::Cow,
         hash::DefaultHasher,
         panic::{
             AssertUnwindSafe,
@@ -830,6 +831,64 @@ fn try_into_array() {
     assert_eq!(<[u8; 2]>::try_from(vec.clone()), Err(vec.clone()));
     assert_eq!(<[u8; 3]>::try_from(vec.clone()), Ok([0, 1, 2]));
     assert_eq!(<[u8; 4]>::try_from(vec.clone()), Err(vec));
+}
+
+#[test]
+fn from_cow() {
+    // Borrowed
+    let v: SmallVec<u64, 4> = Cow::Borrowed(&[1u64, 2][..]).into();
+    assert_eq!(&*v, &[1, 2]);
+    assert!(!v.spilled());
+
+    // Owned, empty
+    let v: SmallVec<u64, 4> = Cow::<[u64]>::Owned(Vec::new()).into();
+    assert!(v.is_empty());
+    assert!(!v.spilled());
+
+    // Owned, capacity <= INLINE
+    let mut vec = Vec::with_capacity(2);
+    vec.extend([1u64, 2]);
+    assert!(vec.capacity() <= 4); // precondition
+
+    let v: SmallVec<u64, 4> = Cow::<[u64]>::Owned(vec).into();
+    assert_eq!(&*v, &[1, 2]);
+    assert!(!v.spilled());
+    assert_eq!(v.capacity(), 4);
+
+    // Owned, larger than INLINE
+    let v: SmallVec<u64, 4> = Cow::<[u64]>::Owned((0..10).collect()).into();
+    assert_eq!(&*v, &(0..10).collect::<Vec<_>>()[..]);
+    assert!(v.spilled());
+    assert!(v.capacity() > 4);
+
+    // Owned, ZST
+    let v: SmallVec<(), 4> = Cow::<[()]>::Owned(vec![(); 10]).into();
+    assert_eq!(v.len(), 10);
+    assert!(!v.spilled());
+}
+
+#[test]
+fn from_cow_drops_each_item_once() {
+    let item = Rc::new(());
+
+    // Borrowed: items are cloned, the originals stay with the slice.
+    let slice = [item.clone(), item.clone()];
+    let v: SmallVec<Rc<()>, 4> = Cow::Borrowed(&slice[..]).into();
+    assert_eq!(Rc::strong_count(&item), 5);
+    drop(v);
+    drop(slice);
+    assert_eq!(Rc::strong_count(&item), 1);
+
+    // Owned, capacity <= INLINE (moved inline), and larger than INLINE
+    // (buffer taken over).
+    for count in [2, 10] {
+        let mut vec = Vec::with_capacity(count);
+        vec.extend(repeat_n(item.clone(), count));
+        let v: SmallVec<Rc<()>, 4> = Cow::<[Rc<()>]>::Owned(vec).into();
+        assert_eq!(Rc::strong_count(&item), count + 1);
+        drop(v);
+        assert_eq!(Rc::strong_count(&item), 1);
+    }
 }
 
 #[test]
