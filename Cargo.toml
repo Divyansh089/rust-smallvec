@@ -24,11 +24,6 @@ exclude = [
 lto = "fat"
 codegen-units = 1
 opt-level = 3
-debug = false
-strip = true
-
-[profile.callgrind]
-inherits = "bench"
 debug = true
 strip = false
 
