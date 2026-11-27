@@ -1,7 +1,7 @@
 on:
   pull_request:
 jobs:
-  callgrind:
+  benchmarks:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -16,7 +16,7 @@ jobs:
       - run: |
           cargo install iai-callgrind-runner \
           --version "${{ steps.metadata.outputs.version }}"
-      - run: cargo bench --bench callgrind --all-features
+      - run: cargo bench --all-features
   practices:
     runs-on: ubuntu-latest
     steps:
