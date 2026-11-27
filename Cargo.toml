@@ -24,11 +24,6 @@ exclude = [
 lto = "fat"
 codegen-units = 1
 opt-level = 3
-debug = false
-strip = true
-
-[profile.callgrind]
-inherits = "bench"
 debug = true
 strip = false
 
@@ -76,7 +71,6 @@ zeroize = { version = "1", optional = true, default-features = false }
 
 [dev-dependencies]
 serde_test = "1"
-criterion = "0.8"
 iai-callgrind = "0.16"
 
 [[test]]
@@ -154,11 +148,6 @@ required-features = ["zerocopy"]
 [[test]]
 name = "zeroize"
 required-features = ["zeroize"]
-
-[[bench]]
-name = "bench"
-path = "benches/bench.rs"
-harness = false
 
 [[bench]]
 name = "callgrind"
