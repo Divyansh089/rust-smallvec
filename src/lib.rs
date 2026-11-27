@@ -319,8 +319,8 @@ impl<Item, const INLINE: usize> SmallVec<Item, INLINE, Global> {
     ///   `Layout::array::<Item>(capacity)`.
     /// - The parts are not used again afterwards.
     #[inline(always)]
-    #[cfg_attr(feature = "internals", syntax(pub))]
-    unsafe fn parts(length: LocatedLength<Item>, raw: RawSmallVec<Item, INLINE>) -> Self {
+    #[cfg(feature = "internals")]
+    pub unsafe fn parts(length: LocatedLength<Item>, raw: RawSmallVec<Item, INLINE>) -> Self {
         unsafe { Self::parts_in(length, raw, Global) }
     }
 }
@@ -1293,8 +1293,8 @@ impl<Item, const INLINE: usize, Heap: Allocator> SmallVec<Item, INLINE, Heap> {
     /// Same contract as [`SmallVec::parts`], except that a heap buffer
     /// must have been allocated by `allocator` (or an equivalent one).
     #[inline]
-    #[cfg_attr(feature = "internals", syntax(pub))]
-    unsafe fn parts_in(
+    #[cfg(feature = "internals")]
+    pub unsafe fn parts_in(
         length: LocatedLength<Item>,
         raw: RawSmallVec<Item, INLINE>,
         allocator: Heap

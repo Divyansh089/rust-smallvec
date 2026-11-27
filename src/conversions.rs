@@ -311,15 +311,27 @@ impl<Item, const INLINE: usize> From<Vec<Item>> for SmallVec<Item, INLINE> {
                 raw: RawSmallVec::new(),
                 allocator: Global
             }
+        } else if array.capacity() <= INLINE {
+            // A heap-allocated `SmallVec` must always observe the invariant
+            // that `capacity > INLINE`, so a small buffer is moved inline
+            // instead of being grown.
+            let mut vec = array;
+            let length = vec.len();
+            let mut smallvec = Self::new();
+            // SAFETY: `length <= capacity <= INLINE`, so the elements fit in
+            // the inline buffer, which is separate from `vec`'s buffer. `vec`'s
+            // length is set to `0`, so the elements are only dropped once, by
+            // `smallvec`, and dropping `vec` just frees its buffer.
+            unsafe {
+                copy_nonoverlapping(vec.as_ptr(), smallvec.raw.as_mut_ptr_inline(), length);
+                vec.set_len(0);
+                smallvec.set_len(length);
+            }
+            smallvec
         } else {
             let mut vec = ManuallyDrop::new(array);
             let length = vec.len();
 
-            // A heap-allocated `SmallVec` must always observe the invariant
-            // that `capacity > INLINE`.
-            if vec.capacity() <= INLINE {
-                vec.reserve(INLINE + 1 - length);
-            }
             // SAFETY: vec.capacity is not `0` (checked above), so the pointer
             // can not dangle and thus specifically cannot be null.
             Self {
@@ -422,19 +434,7 @@ impl<Item: Clone, const INLINE: usize> From<Cow<'_, [Item]>> for SmallVec<Item, 
     #[inline]
     fn from(value: Cow<'_, [Item]>) -> Self {
         match value {
-            Cow::Owned(mut vector) => unsafe {
-                let smallvec = match NonNull::new(vector.as_mut_ptr()) {
-                    Some(pointer) => Self::parts(
-                        LocatedLength::new(vector.len(), true),
-                        RawSmallVec {
-                            heap: NonNull::slice_from_raw_parts(pointer.cast(), vector.capacity())
-                        }
-                    ),
-                    None => Self::parts(LocatedLength::new(vector.len(), false), RawSmallVec::new())
-                };
-                _ = ManuallyDrop::new(vector);
-                smallvec
-            },
+            Cow::Owned(vector) => vector.into(),
             Cow::Borrowed(slice) => slice.into()
         }
     }
